@@ -14,7 +14,7 @@ Status words: `[ ]` not started, `[~]` in progress, `[x]` done and committed.
 - [x] P0-4 Start MySQL
 
 ## Phase 1: Design
-- [ ] P1-6 Module 1 theory notes (DOCS)
+- [x] P1-6 Module 1 theory notes (DOCS)
 - [ ] P1-1 ER and Extended ER (ARCHITECT)
 - [ ] P1-2 ER review (REVIEWER)
 - [ ] P1-3 Table design (ARCHITECT)
