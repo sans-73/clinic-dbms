@@ -1,0 +1,15 @@
+-- Runs every database file in the right order.
+-- Uncomment each line as the file gets created (the phase task tells you when).
+USE clinic_db;
+-- source /db/schema/01_core_settings_staff_audit.sql;
+-- source /db/schema/02_patients_visits.sql;
+-- source /db/schema/03_pharmacy.sql;
+-- source /db/schema/04_orders_billing_discharge.sql;
+-- source /db/schema/09_foreign_keys.sql;
+-- source /db/logic/01_foundation_triggers.sql;
+-- source /db/logic/02_patients_visits.sql;
+-- source /db/logic/03_prescriptions_labs.sql;
+-- source /db/logic/04_pharmacy.sql;
+-- source /db/logic/05_billing_discharge.sql;
+-- source /db/logic/06_owner_alerts_links.sql;
+-- source /db/security/01_roles_and_grants.sql;
