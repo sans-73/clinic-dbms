@@ -8,10 +8,10 @@ How to use: after each task passes its "You check", tick it, commit, and paste t
 Status words: `[ ]` not started, `[~]` in progress, `[x]` done and committed.
 
 ## Phase 0: Setup
-- [ ] P0-1 Install tools
-- [ ] P0-2 GitHub repo
-- [ ] P0-3 First commit
-- [ ] P0-4 Start MySQL
+- [x] P0-1 Install tools
+- [x] P0-2 GitHub repo
+- [x] P0-3 First commit
+- [x] P0-4 Start MySQL
 
 ## Phase 1: Design
 - [ ] P1-6 Module 1 theory notes (DOCS)
