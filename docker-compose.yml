@@ -9,7 +9,7 @@ services:
       MYSQL_DATABASE: clinic_db
       TZ: UTC
     ports:
-      - "3306:3306"
+         - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./db:/db:ro          # lets us run SQL files inside the container
