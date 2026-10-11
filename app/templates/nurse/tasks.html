@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Ward tasks</h1>
+{% if acks %}<div class="notice">Medicine handed to you is waiting for acknowledgement. <a href="/nurse/custody">Open custody</a></div>{% endif %}
+<h2>Medicines due</h2>
+{% if rows %}<div class="tablewrap"><table><thead><tr><th>Due</th><th>Patient</th><th>Medicine</th><th>Ordered</th><th>Pack: supplied / given / left</th><th></th></tr></thead><tbody>
+{% for r in rows %}<tr><td>{% if r.next_due %}{{ r.next_due | t }} {% if r.overdue %}{{ m.badge('OVERDUE','bad') }}{% elif r.due_now %}{{ m.badge('now','warn') }}{% endif %}{% else %}{{ m.badge('done') }}{% endif %}</td>
+<td>{{ r.patient_name }} <span class="muted small">{{ r.display_code }}</span></td><td><b>{{ r.medicine }}</b><br><span class="muted small">{{ r.instructions or '' }}</span></td>
+<td>{{ r.dose_value | num }}{{ r.dose_unit or '' }} {{ r.route or '' }}{% if r.repeat_interval_minutes %}<br>every {{ r.repeat_interval_minutes }} min{% endif %}</td>
+<td>{{ r.supplied | num }} / {{ r.consumed | num }} / <b>{{ r.remaining | num }}</b></td><td><a class="btn small primary" href="/nurse/dose/{{ r.clinical_order_item_id }}">Record dose</a></td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">No active medicine orders.</p>{% endif %}
+<h2>Short-stay patients</h2>
+{% for s in stays %}<div class="card"><b>{{ s.name }}</b> <span class="muted">{{ s.display_code }}</span> · {{ s.hours }} h {% if s.over_limit %}{{ m.badge('OVER LIMIT','bad') }}{% endif %} <a class="btn small" href="/nurse/vitals?visit_id={{ s.visit_id }}">Vitals</a> <a class="btn small" href="/nurse/custody?visit_id={{ s.visit_id }}">Medicine custody</a>
+<details><summary class="small">Ask for extension</summary>{% call m.form('/nurse/stay-extension', csrf, cls='row') %}<input type="hidden" name="short_stay_episode_id" value="{{ s.short_stay_episode_id }}">{{ m.field('Extend until', 'extended_until', '', 'datetime-local', True) }}{{ m.field('Reason', 'reason', '', required=True) }}<button class="btn small">Request</button>{% endcall %}</details></div>{% else %}<p class="muted">None.</p>{% endfor %}
+{% endblock %}

@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>{{ title }}</h1><p class="muted">{{ desc }}</p>
+<form method="get" class="row"><label class="f"><span>Last N days</span><input type="number" name="days" value="{{ days }}" min="1" max="365"></label><button class="btn">Show</button><a class="btn" href="/owner/reports">All reports</a></form>
+{% if rows %}<div class="tablewrap"><table><thead><tr>{% for c in cols %}<th>{{ c | replace('_', ' ') }}</th>{% endfor %}</tr></thead><tbody>{% for r in rows %}<tr>{% for c in cols %}<td>{{ r[c] if r[c] is not none else '' }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>{% else %}<p class="muted">Nothing to report for this period.</p>{% endif %}
+{% endblock %}

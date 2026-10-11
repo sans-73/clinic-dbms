@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Medicine custody</h1>
+{% for k in acks %}<div class="card"><b>{{ k.brand_name }}</b> · {{ k.quantity | num }} handed to you by {{ k.giver }} ({{ k.handoff_purpose }})
+{% call m.form('/nurse/custody/ack', csrf, cls='row', nxt='/nurse/custody') %}<input type="hidden" name="custody_handoff_id" value="{{ k.custody_handoff_id }}">{{ m.field('Quantity I received', 'acknowledged_quantity', k.quantity | num, 'number', True, attrs='step=any') }}<button class="btn ok">Acknowledge</button>{% endcall %}</div>{% endfor %}
+<form method="get" class="row card"><label class="f"><span>Patient visit</span><select name="visit_id" onchange="this.form.submit()"><option value="">choose…</option>{% for v in visits %}<option value="{{ v.visit_id }}" {{ 'selected' if v.visit_id == visit_id }}>{{ v.name }} · {{ v.display_code }}</option>{% endfor %}</select></label></form>
+{% if visit_id %}<h2>Supplied / given / returned / handed to family</h2>
+{% for r in rec %}<div class="card"><b>{{ r.brand_name }}</b> (pack #{{ r.dispensing_id }}) {% if r.balanced %}{{ m.badge('balanced','ok') }}{% else %}{{ m.badge('MISMATCH: ' ~ (r.remaining | num) ~ ' unaccounted' ~ (', ' ~ r.unacknowledged ~ ' handover not acknowledged' if r.unacknowledged), 'bad') }}{% endif %}
+<div class="small">Dispensed {{ r.dispensed | num }} = given {{ r.administered | num }} + returned to stock {{ r.returned | num }} + handed to family {{ r.to_family | num }} + <b>unaccounted {{ r.remaining | num }}</b></div>
+<div class="row">
+{% call m.form('/nurse/custody/leftover', csrf, cls='row', nxt='/nurse/custody?visit_id=' ~ visit_id) %}<input type="hidden" name="dispensing_id" value="{{ r.dispensing_id }}">{{ m.field('Leftover qty', 'quantity', '', 'number', True, attrs='step=any min=0') }}{{ m.field('Condition', 'condition_note') }}<button class="btn small">Ask pharmacy to take back</button>{% endcall %}
+{% call m.form('/nurse/custody/family', csrf, cls='row', nxt='/nurse/custody?visit_id=' ~ visit_id) %}<input type="hidden" name="dispensing_id" value="{{ r.dispensing_id }}">{{ m.field('Qty', 'quantity', '', 'number', True, attrs='step=any min=0') }}{{ m.select('To', 'attendant_id', att | opts('patient_attendant_id', 'name'), required=True) }}<button class="btn small">Hand to family</button>{% endcall %}</div></div>
+{% else %}<p class="muted">No order-linked medicine for this visit.</p>{% endfor %}{% endif %}
+{% endblock %}

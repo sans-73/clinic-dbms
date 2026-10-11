@@ -1,0 +1,51 @@
+{# Shared UI pieces. Usage:  {% import "macros.html" as m %} #}
+{% macro form(action, csrf, method="post", cls="", nxt=None, multipart=False) %}
+<form method="{{ method }}" action="{{ action }}" class="{{ cls }}" {% if multipart %}enctype="multipart/form-data"{% endif %} data-once>
+  {% if method == "post" %}<input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <input type="hidden" name="request_uuid" value="" data-uuid>{% endif %}
+  {% if nxt %}<input type="hidden" name="next" value="{{ nxt }}">{% endif %}
+  {{ caller() }}
+</form>
+{% endmacro %}
+
+{% macro field(label, name, value="", type="text", required=False, placeholder="", attrs="", hint="") %}
+<label class="f"><span>{{ label }}{% if required %} *{% endif %}</span>
+  <input type="{{ type }}" name="{{ name }}" value="{{ value if value is not none else '' }}" placeholder="{{ placeholder }}" {{ 'required' if required }} {{ attrs | safe }}>
+  {% if hint %}<small>{{ hint }}</small>{% endif %}</label>
+{% endmacro %}
+
+{% macro select(label, name, options, selected="", required=False, blank=True) %}
+<label class="f"><span>{{ label }}{% if required %} *{% endif %}</span>
+  <select name="{{ name }}" {{ 'required' if required }}>
+    {% if blank %}<option value="">-- choose --</option>{% endif %}
+    {% for o in options %}{% if o is string %}<option value="{{ o }}" {{ 'selected' if o == selected }}>{{ o }}</option>
+    {% else %}<option value="{{ o[0] }}" {{ 'selected' if o[0] | string == selected | string }}>{{ o[1] }}</option>{% endif %}{% endfor %}
+  </select></label>
+{% endmacro %}
+
+{% macro textarea(label, name, value="", rows=3, required=False) %}
+<label class="f wide"><span>{{ label }}{% if required %} *{% endif %}</span><textarea name="{{ name }}" rows="{{ rows }}" {{ 'required' if required }}>{{ value or '' }}</textarea></label>
+{% endmacro %}
+
+{% macro btn(text, cls="", confirm="") %}
+<button class="btn {{ cls }}" {% if confirm %}data-confirm="{{ confirm }}"{% endif %}>{{ text }}</button>
+{% endmacro %}
+
+{% macro badge(text, kind="") %}<span class="badge {{ kind }}">{{ text }}</span>{% endmacro %}
+
+{% macro statusbadge(s) %}
+{% set k = {'Cancelled':'bad','No-show':'bad','Discharged':'ok','Completed':'ok','With Doctor':'info','In consultation':'info','Waiting':'warn','Arrived':'warn','Booked':'','Checked-in':'info'}.get(s, '') %}
+<span class="badge {{ k }}">{{ s or '-' }}</span>
+{% endmacro %}
+
+{# rows = list of dicts; cols = list of (header, key) ; key may be a dotted name or '_' prefixed to skip #}
+{% macro table(rows, cols, empty="Nothing to show.") %}
+{% if rows %}
+<div class="tablewrap"><table>
+  <thead><tr>{% for h, k in cols %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+  <tbody>{% for r in rows %}<tr>{% for h, k in cols %}<td>{{ r[k] if r[k] is not none else '' }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+</table></div>
+{% else %}<p class="muted">{{ empty }}</p>{% endif %}
+{% endmacro %}
+
+{% macro patientname(p) %}{{ p.given_name }} {{ p.family_name }}{% endmacro %}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Emergency: unknown patient</h1>
+<p class="muted">Only gender and approximate age are needed. A temporary code (TMP-…) is created and the visit starts immediately. Merge with the real record later.</p>
+{% call m.form('/reception/emergency', csrf, cls='card') %}
+<div class="row">{{ m.select('Gender', 'gender', genders, required=True) }}{{ m.field('Approximate age', 'approximate_age', '', 'number', True) }}
+{{ m.select('Doctor', 'doctor_staff_id', doctors | opts('staff_id', 'name')) }}</div>
+<button class="btn danger">Register and start emergency visit</button>{% endcall %}
+{% endblock %}

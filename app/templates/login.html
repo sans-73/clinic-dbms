@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Login · {{ clinic_name }}{% endblock %}
+{% block content %}
+<div class="card narrow center">
+  <h1>{{ clinic_name }}</h1>
+  <p class="muted">Staff login</p>
+  {% for kind, msg in flashes %}{% endfor %}
+  <form method="post" action="/login" class="stack">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <input type="hidden" name="next" value="{{ next or '/' }}">
+    <label class="f"><span>Login</span><input name="identifier" autocomplete="username" autofocus required></label>
+    <label class="f"><span>Password</span><input type="password" name="password" autocomplete="current-password" required></label>
+    <button class="btn primary">Log in</button>
+  </form>
+  {% if stub %}<p class="muted small">Stub mode: owner / doctor / reception / nurse / pharmacy / accountant, password <code>demo</code>.</p>{% endif %}
+</div>
+{% endblock %}

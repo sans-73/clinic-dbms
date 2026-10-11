@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Approvals</h1>
+{% for r in pending %}<div class="card" style="border-left:5px solid var(--warn)"><b>{{ r.request_type | replace('_', ' ') }}</b> {% if r.requested_amount is not none %}<span class="big" style="font-size:1.2rem">{{ r.requested_amount | money }}</span>{% endif %}
+<div>{% if r.patient_name %}Patient {{ r.patient_name }} ({{ r.display_code }}) · {% endif %}{% if r.bill_number %}bill {{ r.bill_number }} · {% endif %}asked by <b>{{ r.requester }}</b> ({{ r.requester_role or '' }}) · {{ r.recorded_at | dt }}</div>
+<p>{{ r.reason }}</p>
+{% call m.form('/owner/approvals/' ~ r.approval_request_id, csrf, cls='row') %}<input name="note" placeholder="note (needed to reject)" style="flex:1;min-width:160px"><button class="btn ok" name="decision" value="approve">Approve</button><button class="btn danger" name="decision" value="reject">Reject</button>{% endcall %}</div>
+{% else %}<p class="muted">Nothing is waiting for you.</p>{% endfor %}
+<h2>Recently decided</h2>{% for r in done %}<div class="small">{{ m.badge(r.decision, 'ok' if r.decision == 'approved' else 'bad') }} {{ r.request_type }} {{ r.requested_amount | money if r.requested_amount is not none }} · {{ r.requester }} · {{ r.decided_at | dt }}</div>{% endfor %}
+{% endblock %}

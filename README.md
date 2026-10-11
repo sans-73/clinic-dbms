@@ -1,11 +1,6 @@
-# Clinic Management System (DBMS Project)
+# Clinic Management System (DBMS Project) - Track B kit
 
-A DBMS-course project: a small-clinic management system (OPD + short-stay) built on MySQL 8.4 with a thin Python web layer.
-Focus: separation of duties, append-only clinical and financial records, stock and billing ledgers, audit and anti-leakage reports, concurrency and recovery demos, indexing benchmarks.
-
-- Start here: `docs/00_START_HERE.md`
-- Master context (what we are building): `docs/PROJECT_CONTEXT.md`
-- Task cards for each AI helper: `docs/TASKS.md`
-- Progress tracker: `docs/PROGRESS.md`
-
-> Uses only fake patient data. Never commit real data or passwords.
+Layout equals the repo layout. Read `docs/pooling/TRACK_B_POOLING_GUIDE.pdf` (or `.md`) first.
+Quick check: `python tools/verify_kit.py`   |   Rebuild generated SQL: `python tools/build_db.py`   |   Load DB: `bash tools/run_sql_checked.sh`
+Single source of truth for the schema: `tools/schema_spec.py` (implements `docs/design/01_er_model.md` rev 2).
+> Fake patient data only. Never commit `.env` or password hashes.

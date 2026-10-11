@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<div class="row" style="justify-content:space-between"><h1>Alerts</h1><a class="btn small" href="/owner/alerts?all={{ 0 if all else 1 }}">{{ 'Only unacknowledged' if all else 'Show all' }}</a></div>
+{% for r in rows %}<div class="card" style="border-left:5px solid {{ 'var(--bad)' if r.severity == 'red' else 'var(--warn)' }}">{{ m.badge(r.alert_class | replace('_', ' '), 'bad' if r.alert_class == 'safety_interrupt' else '') }} <b>{{ r.alert_type }}</b> · {{ r.recorded_at | dt }}<p>{{ r.summary }}</p>
+<span class="muted small">{{ r.source_entity_type }} #{{ r.source_entity_id }}</span>
+{% if r.acked_at %}<p class="small">{{ m.badge('acknowledged','ok') }} by {{ r.acked_by }} at {{ r.acked_at | dt }}</p>{% else %}
+{% if r.escalated %}{{ m.badge('escalated to backup','warn') }}{% endif %}
+{% call m.form('/owner/alerts/' ~ r.alert_event_id ~ '/ack', csrf, cls='row') %}<input name="note" placeholder="note (optional)"><button class="btn primary">Acknowledge</button>{% endcall %}{% endif %}</div>
+{% else %}<p class="muted">No alerts.</p>{% endfor %}
+{% endblock %}

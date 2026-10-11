@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Patients</h1>
+<form method="get" class="row card"><label class="f" style="flex:1"><span>Name, phone or code</span><input name="q" value="{{ q }}" autofocus></label><button class="btn primary">Search</button><a class="btn" href="/reception/patients/new">+ New patient</a></form>
+{% if rows %}<div class="tablewrap"><table><thead><tr><th>Code</th><th>Name</th><th>DOB</th><th>Gender</th><th>Phone</th><th></th></tr></thead><tbody>
+{% for r in rows %}<tr><td>{{ r.display_code }}</td><td><a href="/reception/patients/{{ r.patient_id }}">{{ r.given_name }} {{ r.family_name }}</a> {% if r.registration_kind == 'emergency_unknown' %}{{ m.badge('unknown','warn') }}{% endif %}</td><td>{{ r.date_of_birth | d }}</td><td>{{ r.gender }}</td><td>{{ r.phone or '' }}</td>
+<td><a class="btn small" href="/reception/appointments?patient_id={{ r.patient_id }}">Book</a> <a class="btn small" href="/reception/merge?source={{ r.patient_id }}">Merge…</a></td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">No patients found.</p>{% endif %}
+{% endblock %}

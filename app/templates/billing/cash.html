@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Cash handover from pharmacy</h1>
+{% for d in rows %}<div class="card"><b>{{ d.pharmacist }}</b> · {{ d.period_start | dt }} → {{ d.period_end | dt }}<br>Declared <b>{{ d.declared_amount | money }}</b> · system expects <b>{{ d.expected | money }}</b> {% if d.declared_amount != d.expected %}{{ m.badge('differs from system', 'warn') }}{% endif %}
+{% call m.form('/billing/cash/' ~ d.cash_handover_declaration_id, csrf, cls='row') %}{{ m.field('Cash I counted', 'counted_amount', '', 'number', True, attrs='step=0.01') }}{{ m.field('Note', 'note') }}<button class="btn ok">Confirm count</button>{% endcall %}</div>{% else %}<p class="muted">Nothing waiting to be counted.</p>{% endfor %}
+{% endblock %}

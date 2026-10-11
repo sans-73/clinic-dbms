@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card narrow center">
+  <h1>Hello {{ name }}</h1>
+  <p>Which role are you working as right now? Every action you take is recorded under this role.</p>
+  <form method="post" action="/choose-role" class="stack">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    {% for r in roles %}<button class="btn primary" name="role" value="{{ r }}">{{ r | rolelabel }}</button>{% endfor %}
+  </form>
+</div>
+{% endblock %}

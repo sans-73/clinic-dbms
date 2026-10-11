@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<div class="row" style="justify-content:space-between"><h1>Queue board <span class="muted small">{{ today }}</span></h1>
+  <div class="row"><a class="btn primary" href="/reception/patients/new">+ New patient</a><a class="btn" href="/reception/emergency">Emergency</a><a class="btn" href="/reception/appointments">Appointments</a></div></div>
+<form method="get" action="/reception/patients" class="row card"><label class="f" style="flex:1"><span>Find a patient (name, phone or code)</span><input name="q" autofocus></label><button class="btn">Search</button></form>
+
+{% if stays %}
+<h2>Short-stay patients now</h2>
+<div class="tablewrap"><table><thead><tr><th>Patient</th><th>Started</th><th>Hours</th><th>Allowed until</th><th></th></tr></thead><tbody>
+{% for s in stays %}<tr><td><a href="/reception/patients/{{ s.patient_id }}">{{ s.name }}</a> <span class="muted">{{ s.display_code }}</span></td><td>{{ s.started_at | dt }}</td><td>{{ s.hours }}</td><td>{{ s.allowed_until | dt }}</td>
+<td>{% if s.over_limit %}{{ m.badge('OVER LIMIT - owner informed', 'bad') }}{% else %}{{ m.badge('within limit', 'ok') }}{% endif %}</td></tr>{% endfor %}
+</tbody></table></div>
+{% endif %}
+
+<h2>Today's visits ({{ rows | length }})</h2>
+{% if rows %}
+<div class="tablewrap"><table><thead><tr><th>#</th><th>Patient</th><th>Status</th><th>Where</th><th>Doctor</th><th>Since</th><th>Move to</th></tr></thead><tbody>
+{% for r in rows %}<tr>
+ <td>{{ r.visit_id }}</td>
+ <td><a href="/reception/patients/{{ r.patient_id }}">{{ r.name }}</a> <span class="muted small">{{ r.display_code }}</span>
+   {% if r.entry_type == 'emergency' %}{{ m.badge('emergency','bad') }}{% elif r.entry_type == 'walk_in' %}{{ m.badge('walk-in') }}{% endif %}{% if r.short_stay %} {{ m.badge('stay','info') }}{% endif %}</td>
+ <td>{{ m.statusbadge(r.status) }}{% if r.closed %} {{ m.badge('closed') }}{% endif %}</td>
+ <td>{{ r.location_label or '' }}</td><td>{{ r.doctor_name or '-' }}</td><td>{{ r.since | t }}</td>
+ <td>{% if not r.closed %}{% call m.form('/reception/visits/' ~ r.visit_id ~ '/status', csrf, cls='row') %}
+   <select name="status" style="width:auto">{% for s in statuses %}<option {{ 'selected' if s == r.status }}>{{ s }}</option>{% endfor %}</select>
+   <input name="location_label" placeholder="location (optional)" style="width:130px"><button class="btn small">Set</button>{% endcall %}{% endif %}</td>
+</tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">No visits yet today.</p>{% endif %}
+{% endblock %}

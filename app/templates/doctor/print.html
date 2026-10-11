@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+{% if not d %}<p class="muted">Nothing to print.</p>{% else %}
+<p class="noprint"><button class="btn primary" onclick="window.print()">Print</button></p>
+<div class="paper">
+  <h1>{{ d.clinic.clinic_name or clinic_name }}</h1>
+  <p style="text-align:center">{{ d.clinic.clinic_address or '' }} {{ d.clinic.clinic_phone or '' }}</p><hr>
+  <table style="border:0"><tr><td><b>Patient:</b> {{ d.v.name }} ({{ d.v.display_code }})<br>{{ d.v.gender }}{% if d.v.date_of_birth %}, {{ d.v.date_of_birth | age }} y{% endif %}</td>
+  <td style="text-align:right"><b>Date:</b> {{ d.v.occurred_at | d }}<br>Visit #{{ d.v.visit_id }}</td></tr></table>
+  {% if d.allergies %}<p><b>Allergies:</b> {{ d.allergies | map(attribute='allergen') | join(', ') }}</p>{% endif %}
+  {% if d.diagnoses %}<p><b>Diagnosis:</b> {{ d.diagnoses | map(attribute='diagnosis_text') | join('; ') }}</p>{% endif %}
+  <h2 style="font-family:serif">℞</h2>
+  {% if d.rx %}<table><thead><tr><th>#</th><th>Medicine</th><th>Dose</th><th>Schedule</th><th>Food</th><th>Days</th></tr></thead><tbody>
+  {% for i in d.rx.active_items %}<tr><td>{{ loop.index }}</td><td><b>{{ i.medicine_name }}</b>{% if i.strength_value %} {{ i.strength_value | num }}{{ i.strength_unit or '' }}{% endif %}{% if i.dosage_form %} ({{ i.dosage_form }}){% endif %}</td><td>{{ i.chosen_dose_text or '' }}</td><td>{{ i.chosen_schedule or '' }}</td><td>{{ i.food_instruction or '' }}</td><td>{{ i.duration_days or '' }}</td></tr>{% endfor %}</tbody></table>
+  <p class="small">Version {{ d.rx.version_number }}</p>{% else %}<p>No medicines prescribed.</p>{% endif %}
+  <br><br><p style="text-align:right">{{ d.doctor.name if d.doctor else (d.v.doctor_name or '') }}<br>{% if d.doctor and d.doctor.registration_number %}Reg. No. {{ d.doctor.registration_number }}{% endif %}</p>
+</div>{% endif %}
+{% endblock %}

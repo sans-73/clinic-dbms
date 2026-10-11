@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Counter sales</h1>
+<p class="muted">For people who are NOT clinic patients: over-the-counter medicines and outside prescriptions. Schedule H/H1/X medicines cannot be sold without a prescription.</p>
+{% call m.form('/pharmacy/counter/start', csrf, cls='card') %}<h3>New sale</h3>
+<div class="row">{{ m.field('Customer name (optional)', 'display_name') }}{{ m.field('Phone (for receipt)', 'phone', '', 'tel') }}</div>
+<details><summary>Outside prescription (needed for Schedule drugs)</summary><div class="row">{{ m.field('Doctor name', 'prescriber_name') }}{{ m.field('Doctor registration no.', 'prescriber_registration_no') }}{{ m.field('Prescription date', 'prescription_date', '', 'date') }}</div></details>
+<button class="btn primary">Start sale</button>{% endcall %}
+{% if sales %}<div class="tablewrap"><table><thead><tr><th>Sale</th><th>Customer</th><th>Total</th><th>Paid</th><th></th></tr></thead><tbody>
+{% for s in sales %}<tr><td><a href="/pharmacy/counter/{{ s.counter_sale_id }}">{{ s.sale_number }}</a><br><span class="muted small">{{ s.recorded_at | dt }}</span></td><td>{{ s.display_name or s.temporary_code or s.phone }}</td><td>{{ s.total | money }}</td><td>{{ s.paid | money }}</td><td>{% if s.total - s.paid > 0 %}{{ m.badge('due ' ~ ((s.total - s.paid) | money), 'warn') }}{% else %}{{ m.badge('paid','ok') }}{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Lab reports</h1>
+{% for r in rows %}<div class="card"><b>{{ r.test_name }}</b> · {{ r.patient_name }} ({{ r.display_code }}) · {{ r.lab_name }} {% if r.crit == 'critical' %}{{ m.badge('CRITICAL','bad') }}{% endif %} {% if r.source == 'brought_by_patient' %}{{ m.badge('brought by patient','warn') }}{% endif %}
+<br><span class="muted small">Report v{{ r.version_number }} received {{ r.recorded_at | dt }} · hash {{ (r.content_hash or '')[:12] }}…</span>
+<p>{% for step, done in r.trail %}<span class="{{ 'tick' if done else 'muted' }}">{{ '✓' if done else '○' }} {{ step }}</span>{% if not loop.last %} › {% endif %}{% endfor %}</p>
+<a class="btn small" href="/files/lab/{{ r.report_id }}" target="_blank">Open report file</a> <a class="btn small" href="/doctor/visit/{{ r.visit_id }}">Visit</a>
+{% if not r.reviewed %}{% call m.form('/doctor/reports/' ~ r.report_id ~ '/review', csrf, cls='row') %}<input name="review_note" placeholder="review note (optional)"><button class="btn ok small">Mark reviewed</button>{% endcall %}{% else %}{{ m.badge('reviewed','ok') }}{% endif %}
+<details><summary class="small">Critical mark / wrong patient</summary>
+{% call m.form('/doctor/reports/' ~ r.report_id ~ '/critical', csrf, cls='row') %}<input name="reason" placeholder="reason"><button class="btn small danger" name="mark" value="critical">Mark CRITICAL</button><button class="btn small" name="mark" value="not_critical">Not critical</button>{% endcall %}
+{% call m.form('/doctor/reports/' ~ r.report_id ~ '/retract', csrf, cls='row') %}<select name="retraction_kind"><option value="wrong_patient">wrong patient</option><option value="wrong_order">wrong order</option><option value="corrupt_file">corrupt file</option><option value="superseded_by_lab">superseded by lab</option></select><input name="note" placeholder="why (required)" required><button class="btn small danger" data-confirm="Retract this report?">Retract</button>{% endcall %}</details></div>
+{% else %}<p class="muted">No reports waiting.</p>{% endfor %}
+{% endblock %}

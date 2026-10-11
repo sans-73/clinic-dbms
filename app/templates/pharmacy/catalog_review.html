@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Catalog review queue</h1>
+<p class="muted">Medicines the doctor typed as free text. Map each to an existing medicine, add it to the catalog, or reject.</p>
+{% for r in rows %}<div class="card"><b>{{ r.submitted_name }}</b> <span class="muted small">typed {{ r.times }} time(s) · {{ r.recorded_at | dt }}</span>
+{% call m.form('/pharmacy/catalog-review/' ~ r.catalog_review_queue_id, csrf, cls='row') %}
+<select name="resolved_medicine_id"><option value="">map to…</option>{% for x in meds %}<option value="{{ x.medicine_id }}">{{ x.brand_name }} {{ x.strength_value | num }}{{ x.strength_unit or '' }}</option>{% endfor %}</select>
+<button class="btn small" name="action" value="mapped">Map</button><button class="btn small" name="action" value="rejected">Reject</button>{% endcall %}
+<details><summary class="small">Add as new catalog medicine</summary>
+{% call m.form('/pharmacy/catalog-review/' ~ r.catalog_review_queue_id, csrf, cls='row') %}<input type="hidden" name="action" value="added_to_catalog">
+{{ m.field('Brand', 'brand_name', r.submitted_name, required=True) }}{{ m.field('Generic', 'generic_display_name') }}{{ m.field('Strength', 'strength_value', '', 'number', attrs='step=any') }}{{ m.field('Unit', 'strength_unit', 'mg') }}{{ m.field('Form', 'dosage_form', 'tablet') }}{{ m.field('Stock unit', 'stock_unit', 'tablet', required=True) }}{{ m.select('Schedule', 'schedule_class', classes, 'none', blank=False) }}<label><input type="checkbox" name="returnable" value="1"> returnable</label><button class="btn small primary">Add</button>{% endcall %}</details></div>
+{% else %}<p class="muted">Queue is empty.</p>{% endfor %}
+{% endblock %}

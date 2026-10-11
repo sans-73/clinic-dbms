@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Bills</h1>
+<form method="get" class="row card"><label class="f" style="flex:1"><span>Bill number, patient name or code</span><input name="q" value="{{ q }}"></label><label><input type="checkbox" name="due" value="1" {{ 'checked' if due }}> only with balance due</label><button class="btn">Search</button></form>
+{% if user.role in ['ACCOUNTANT', 'RECEPTIONIST'] and nobill %}<details class="card"><summary>Today's visits without a bill ({{ nobill | length }})</summary>
+{% for v in nobill %}{% call m.form('/billing/visit/' ~ v.visit_id ~ '/open', csrf, cls='inline') %}<div>{{ v.patient_name }} <span class="muted">{{ v.display_code }}</span> <button class="btn small">Create bill</button></div>{% endcall %}{% endfor %}</details>{% endif %}
+{% if rows %}<div class="tablewrap"><table><thead><tr><th>Bill</th><th>Patient</th><th>State</th><th>Total</th><th>Paid</th><th>Balance</th></tr></thead><tbody>
+{% for r in rows %}<tr><td><a href="/billing/bill/{{ r.bill_id }}">{{ r.bill_number }}</a></td><td>{{ r.patient_name }} <span class="muted small">{{ r.display_code }}</span></td><td>{{ m.badge(r.state, 'ok' if r.state == 'Settled' else ('info' if r.state == 'Finalized' else '')) }}</td><td>{{ r.total | money }}</td><td>{{ r.paid | money }}</td><td><b>{{ r.balance | money }}</b></td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="muted">No bills found.</p>{% endif %}
+{% endblock %}

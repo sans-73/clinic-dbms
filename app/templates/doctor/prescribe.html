@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Prescription {% if v %}<span class="muted">{{ v.name }} · {{ v.display_code }}</span>{% endif %}</h1>
+{% if allergies %}<div class="interrupt">ALLERGIES: {{ allergies | join(', ') }}</div>{% else %}<p class="muted">No allergies recorded for this patient.</p>{% endif %}
+<p class="muted small">Type a medicine name. <span class="chip green">In stock: n</span> <span class="chip blue">Out of stock</span> <span class="chip red">Not in catalog</span> (free text is allowed; you will be asked to confirm allergies). {% if rx %}Saving creates version {{ rx.version_number + 1 }}; old versions are kept.{% endif %}</p>
+<form method="post" action="/doctor/visit/{{ vid }}/prescribe" id="rxform" data-once>
+  <input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="request_uuid" value="" data-uuid>
+  <input type="hidden" name="row_ids" id="row_ids" value="">
+  <div id="rows"></div>
+  <p><button type="button" class="btn" id="addrow">+ Add medicine</button></p>
+  {% if rx %}{{ m.field('Reason for change', 'change_reason', '', required=True) }}{% endif %}
+  <p><button class="btn primary">Save prescription</button> <a class="btn" href="/doctor/visit/{{ vid }}">Back to visit</a></p>
+</form>
+<dialog id="allergydlg"><h3>Check allergies before saving</h3>
+  <p>Recorded allergies: <b id="dlgallergies"></b></p><div id="dlglist"></div>
+  <label><input type="checkbox" id="dlgchk"> I have checked these allergies against the medicines above.</label>
+  <p><button class="btn primary" id="dlgok">Confirm and save</button> <button class="btn" id="dlgcancel" type="button">Go back</button></p></dialog>
+<script type="application/json" id="rxcfg">{{ cfg | tojson }}</script>
+{% endblock %}
+{% block scripts %}<script src="/static/rx.js"></script>{% endblock %}

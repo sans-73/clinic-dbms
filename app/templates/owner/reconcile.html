@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Reconciliation</h1><p class="muted">Cross-checks between records that should always agree (anti-leakage).</p>
+<h2>Visits older than a day with no bill</h2>{{ m.table(r.visits_no_bill, [('Visit', 'visit_id'), ('When', 'occurred_at'), ('Patient', 'display_code')], 'All visits have bills.') }}
+<h2>Medicine dispensed but not on any bill</h2>{{ m.table(r.dispensed_no_billing, [('Movement', 'stock_movement_id'), ('When', 'recorded_at'), ('Qty', 'quantity_delta'), ('Price', 'unit_price_snapshot')], 'Every dispensing is billed.') }}
+<h2>Stock movements without a dispensing record</h2>{{ m.table(r.stock_no_dispensing, [('Movement', 'stock_movement_id'), ('When', 'recorded_at'), ('Qty', 'quantity_delta')], 'None.') }}
+<h2>Cash handover differences</h2>{{ m.table(r.cash_differences, [('When', 'recorded_at'), ('Pharmacist', 'pharmacist'), ('Declared', 'declared_amount'), ('Counted', 'counted_amount'), ('Difference', 'difference')], 'No differences.') }}
+<h2>Critical lab reports not reviewed</h2>{{ m.table(r.unreviewed_critical, [('Test', 'test_name'), ('Received', 'recorded_at')], 'None.') }}
+<h2>Backups</h2>{{ m.table(r.backups, [('When', 'recorded_at'), ('Kind', 'backup_kind'), ('Encrypted', 'encrypted'), ('Off-site copy', 'offsite_copy_confirmed'), ('Result', 'result')], 'No backup has been recorded yet.') }}
+{% endblock %}

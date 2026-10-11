@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>My patients today</h1>
+{% if rows %}<div class="tablewrap"><table><thead><tr><th>#</th><th>Patient</th><th>Status</th><th>Waiting since</th><th></th></tr></thead><tbody>
+{% for r in rows %}<tr><td>{{ r.visit_id }}</td><td><b>{{ r.name }}</b> <span class="muted small">{{ r.display_code }}</span> {% if r.entry_type == 'emergency' %}{{ m.badge('emergency','bad') }}{% endif %}{% if r.short_stay %} {{ m.badge('stay','info') }}{% endif %}</td>
+<td>{{ m.statusbadge(r.status) }}</td><td>{{ r.since | t }}</td>
+<td class="row"><a class="btn small primary" href="/doctor/visit/{{ r.visit_id }}">Open</a>
+{% if r.status != 'With Doctor' %}{% call m.form('/doctor/visits/' ~ r.visit_id ~ '/call', csrf) %}<button class="btn small ok">Call in</button>{% endcall %}{% endif %}</td></tr>{% endfor %}
+</tbody></table></div>{% else %}<p class="muted">No patients assigned to you right now.</p>{% endif %}
+{% endblock %}

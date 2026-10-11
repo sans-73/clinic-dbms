@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Merge two patient records</h1>
+<p class="muted">The SOURCE record is merged INTO the surviving record. Nothing is deleted; a merge log is written. Only you decide that these are the same person.</p>
+<form method="get" class="row card"><label class="f"><span>Source patient id (to be merged away)</span><input name="source" value="{{ source or '' }}"></label><label class="f"><span>Surviving patient id</span><input name="target" value="{{ target or '' }}"></label><button class="btn">Compare</button></form>
+{% if s and t %}
+<div class="grid">{% for label, x in [('SOURCE (merged away)', s), ('SURVIVOR (kept)', t)] %}<div class="card"><h3>{{ label }}</h3><b>{{ x.p.name }}</b> <span class="muted">{{ x.p.display_code }}</span>
+<dl class="kv"><dt>DOB</dt><dd>{{ x.p.date_of_birth | d }}</dd><dt>Gender</dt><dd>{{ x.p.gender }}</dd><dt>Phone</dt><dd>{{ x.p.current_phone or '-' }}</dd><dt>Visits</dt><dd>{{ x.visits | length }}</dd></dl></div>{% endfor %}</div>
+{% call m.form('/reception/merge', csrf, cls='card') %}
+<input type="hidden" name="source" value="{{ source }}"><input type="hidden" name="target" value="{{ target }}">
+{{ m.textarea('Reason for merge', 'reason', required=True, rows=2) }}
+<label><input type="checkbox" name="confirm" value="1"> I have checked that both records are the same person.</label>
+<p><button class="btn danger" data-confirm="Merge cannot be undone from the screen. Continue?">Merge records</button></p>{% endcall %}
+{% endif %}
+{% endblock %}

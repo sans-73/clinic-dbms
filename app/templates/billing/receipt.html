@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+{% if not p %}<p class="muted">Receipt not found.</p>{% else %}
+<p class="noprint"><button class="btn primary" onclick="window.print()">Print</button></p>
+<div class="paper" style="max-width:420px"><h1>{{ p.clinic or clinic_name }}</h1><p style="text-align:center">PAYMENT RECEIPT</p><hr>
+<table style="border:0"><tr><td>Receipt no.</td><td>{{ p.receipt_number }}</td></tr><tr><td>Date</td><td>{{ p.recorded_at | dt }}</td></tr><tr><td>Patient</td><td>{{ p.patient_name }} ({{ p.display_code }})</td></tr><tr><td>Bill</td><td>{{ p.bill_number }}</td></tr><tr><td>Method</td><td>{{ p.method }}</td></tr><tr><td><b>Amount</b></td><td><b>{{ p.amount | money }}</b> {{ '(reversal)' if p.payment_kind == 'reversal' }}</td></tr><tr><td>Received by</td><td>{{ p.received_by }}</td></tr></table></div>{% endif %}
+{% endblock %}

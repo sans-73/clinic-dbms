@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Price list</h1><p class="muted">Fixed-price items only. Each price has an effective date; past bills keep the price they were created with.</p>
+{% call m.form('/owner/prices', csrf, cls='card') %}<h3>New item / new price</h3><div class="row">{{ m.field('Item code', 'item_code', '', required=True) }}{{ m.field('Description', 'description', '', required=True) }}{{ m.select('Category', 'category', ['consultation', 'stay', 'procedure', 'injection', 'drip', 'other'], 'consultation', blank=False) }}{{ m.field('Price', 'price', '', 'number', True, attrs='step=0.01 min=0') }}{{ m.field('Effective from', 'effective_from', today, 'date', True) }}{{ m.field('Until (optional)', 'effective_to', '', 'date') }}<button class="btn primary">Add</button></div>{% endcall %}
+{% for r in rows %}{% call m.form('/owner/prices', csrf, cls='row card') %}<input type="hidden" name="price_list_id" value="{{ r.price_list_id }}">
+<div style="min-width:120px"><b>{{ r.item_code }}</b><br><span class="muted small">{{ r.category }} · from {{ r.effective_from | d }}</span></div>
+{{ m.field('Description', 'description', r.description) }}{{ m.field('Price', 'price', r.price, 'number', attrs='step=0.01 min=0') }}{{ m.field('Until', 'effective_to', r.effective_to or '', 'date') }}
+<label><input type="checkbox" name="active" value="1" {{ 'checked' if r.active }}> active</label><button class="btn small">Save</button>{% endcall %}{% else %}<p class="muted">No items yet.</p>{% endfor %}
+{% endblock %}

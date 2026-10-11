@@ -82,9 +82,14 @@ Status words: `[ ]` not started, `[~]` in progress, `[x]` done and committed.
 - (none yet)
 
 ## Handoff log (newest on top; paste each AI's HANDOFF NOTE here)
-```
-(empty)
-```
+HANDOFF P1-6
+Done: Module 1 study notes covering all topics on the card. Each topic has a clinic example, and the data models are compared in a table.
+Files: docs/theory/module1_notes.md
+How to check: open the file. Expected: 10 sections, covering history, file system vs DBMS, advantages, 3-level architecture, data independence, DDL/DML/DCL/TCL and interfaces, DBA and users, the 6-model comparison table, and protection and security.
+Assumptions made: I added TCL and a short revision checklist beyond the card. The graph-model row mentions the family-links table as a relational alternative.
+Open issues / CRs: none
+Commit: P1-6: module 1 theory notes
+
 
 ## Quick prompt for any AI when you are lost
 > I am the leader of a clinic DBMS project. Here are PROJECT_CONTEXT.md and PROGRESS.md. Tell me the next unblocked task, which cards I can run in parallel, and what I should check before committing.

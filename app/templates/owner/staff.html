@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Staff and roles</h1>
+<div class="tablewrap"><table><thead><tr><th>Name</th><th>Login</th><th>Roles</th><th>Password</th><th></th></tr></thead><tbody>
+{% for s in rows %}<tr><td>{{ s.given_name }} {{ s.family_name }} <span class="muted small">{{ s.display_code }}</span> {% if s.principal_kind == 'system' %}{{ m.badge('system') }}{% endif %}</td><td>{{ s.login_subject or '-' }}</td><td>{{ s.roles or '-' }}</td><td>{% if s.principal_kind == 'human' %}{{ 'set' if s.has_password else 'NOT SET' }}{% endif %}</td>
+<td>{% if s.principal_kind == 'human' %}<details><summary class="small">Manage</summary>
+{% call m.form('/owner/staff/' ~ s.staff_id ~ '/password', csrf, cls='row') %}<input name="password" type="password" placeholder="new password (8+)" autocomplete="new-password"><button class="btn small">Set password</button>{% endcall %}
+{% call m.form('/owner/staff/' ~ s.staff_id ~ '/role', csrf, cls='row') %}<select name="role_id">{% for r in roles %}<option value="{{ r.role_id }}">{{ r.role_code }}</option>{% endfor %}</select><button class="btn small" name="op" value="add">Add role</button><button class="btn small" name="op" value="end">End role</button>{% endcall %}</details>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% call m.form('/owner/staff/create', csrf, cls='card') %}<h3>New staff member</h3><div class="row">{{ m.field('First name', 'given_name', '', required=True) }}{{ m.field('Last name', 'family_name', '', required=True) }}{{ m.field('Phone', 'phone', '', 'tel') }}{{ m.field('Login name', 'login_subject', '', required=True) }}{{ m.field('First password', 'password', '', 'password', True, attrs='autocomplete=new-password') }}{{ m.field('Registration no. (doctor/nurse/pharmacist)', 'registration_number') }}</div>
+<p>{% for r in roles %}<label style="margin-right:1rem"><input type="checkbox" name="roles" value="{{ r.role_code }}"> {{ r.role_code }}</label>{% endfor %}</p><button class="btn primary">Create</button>{% endcall %}
+{% endblock %}

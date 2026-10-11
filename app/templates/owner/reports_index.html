@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Exception reports</h1><p class="muted">Weekly / monthly patterns (R10.5). Pick the period on each report.</p>
+<div class="grid">{% for key, r in reports.items() %}<a class="card" style="text-decoration:none;color:inherit" href="/owner/reports/{{ key }}"><b>{{ r[0] }}</b><br><span class="muted small">{{ r[1] }}</span></a>{% endfor %}</div>
+{% endblock %}

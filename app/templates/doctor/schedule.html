@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>My schedule</h1>
+{{ m.table(rows, [('Day (0=Mon)', 'weekday'), ('From', 'start_time'), ('To', 'end_time'), ('Slot min', 'slot_minutes'), ('Valid from', 'valid_from'), ('State', 'schedule_state')], 'No schedule yet.') }}
+<h2>Request a change</h2><p class="muted">You request; reception/owner applies. Old timings stay in history.</p>
+{% call m.form('/doctor/schedule/request', csrf, cls='card') %}
+<div class="row">{{ m.select('Kind', 'change_kind', ['modify', 'add_session', 'withdraw_session'], required=True) }}
+{{ m.select('Which schedule row', 'target_doctor_schedule_id', rows | opts('doctor_schedule_id', 'weekday')) }}
+{{ m.select('Weekday (0=Mon)', 'weekday', ['0', '1', '2', '3', '4', '5', '6']) }}{{ m.field('Start', 'start_time', '', 'time') }}{{ m.field('End', 'end_time', '', 'time') }}{{ m.field('Slot minutes', 'slot_minutes', 15, 'number') }}{{ m.field('Valid from', 'valid_from', '', 'date', True) }}</div>
+{{ m.textarea('Reason', 'reason', required=True, rows=2) }}<button class="btn primary">Send request</button>{% endcall %}
+<h2>My requests</h2>{{ m.table(reqs, [('Kind', 'change_kind'), ('Valid from', 'proposed_valid_from'), ('Reason', 'reason'), ('Outcome', 'outcome')], 'None.') }}
+{% endblock %}

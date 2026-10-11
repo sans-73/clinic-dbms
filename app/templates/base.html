@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ clinic_name }}{% endblock %}</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="{% block bodyclass %}{% endblock %}" data-refresh="{{ refresh or 0 }}">
+{% if stub %}<div class="stubbar">STUB MODE: no database connected. Screens are empty and nothing is saved.</div>{% endif %}
+{% if user %}
+<header class="top">
+  <button class="burger" onclick="document.body.classList.toggle('navopen')" aria-label="Menu">☰</button>
+  <a class="brand" href="/">{{ clinic_name }}</a>
+  <div class="who">
+    <span>{{ user.name }} · <b>{{ user.role | rolelabel }}</b></span>
+    {% if user.roles | length > 1 %}
+    <form method="post" action="/switch-role" class="inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <select name="role" onchange="this.form.submit()" aria-label="Switch role">
+        {% for r in user.roles %}<option value="{{ r }}" {{ 'selected' if r == user.role }}>{{ r | rolelabel }}</option>{% endfor %}
+      </select>
+    </form>
+    {% endif %}
+    <form method="post" action="/logout" class="inline"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="link">Logout</button></form>
+  </div>
+</header>
+<nav class="side">
+  {% for label, url in menu %}<a href="{{ url }}" class="{{ 'on' if path == url or (url != '/' and path.startswith(url + '/')) }}">{{ label }}</a>{% endfor %}
+</nav>
+{% endif %}
+<main class="{{ 'withnav' if user else 'plain' }}">
+  {% if banner and banner.interrupts %}
+  <div class="interrupt"><b>{{ banner.interrupts }} patient-safety alert{{ 's' if banner.interrupts != 1 }} waiting.</b>
+    <a href="/owner/alerts">Open and acknowledge</a>{% if banner.approvals %} · <a href="/owner/approvals">{{ banner.approvals }} approval{{ 's' if banner.approvals != 1 }} pending</a>{% endif %}</div>
+  {% elif banner and banner.approvals %}
+  <div class="notice"><a href="/owner/approvals">{{ banner.approvals }} approval{{ 's' if banner.approvals != 1 }} waiting for you</a></div>
+  {% endif %}
+  {% for kind, msg in flashes %}<div class="flash {{ kind }}" role="status">{{ msg }}</div>{% endfor %}
+  {% block content %}{% endblock %}
+</main>
+<script src="/static/app.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

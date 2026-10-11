@@ -7,3 +7,4 @@ node_modules/
 backups/
 *.log
 .DS_Store
+*.owner.sql

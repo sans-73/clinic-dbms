@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Dispense</h1>
+<div class="row"><form method="get" class="row"><label class="f"><span>Find patient</span><input name="q" value="{{ q }}"></label><button class="btn">Search</button></form><a class="btn" href="/pharmacy/counter">Counter sale / outside prescription / OTC →</a></div>
+<h2>Clinic prescriptions waiting</h2>
+{% for r in rows %}<div class="card"><b>{{ r.patient_name }}</b> <span class="muted">{{ r.display_code }} · visit {{ r.visit_id }}</span> {% if r.schedule_class and r.schedule_class != 'none' %}{{ m.badge('Schedule ' ~ r.schedule_class, 'warn') }}{% endif %}
+<div>{{ r.name }} · {{ r.chosen_dose_text or '' }} {{ r.chosen_schedule or '' }} · {{ r.duration_days or '' }} days · prescribed {{ r.quantity_prescribed | num }} {{ r.stock_unit or '' }}{% if r.dispensed %}, already given {{ r.dispensed | num }}{% endif %}</div>
+{% call m.form('/pharmacy/dispense/rx', csrf, cls='row') %}
+<input type="hidden" name="prescription_item_id" value="{{ r.prescription_item_id }}"><input type="hidden" name="medicine_id" value="{{ r.medicine_id }}"><input type="hidden" name="visit_id" value="{{ r.visit_id }}">
+{{ m.field('Quantity', 'quantity', r.remaining | num if r.remaining is not none else '', 'number', True, attrs='step=any min=0') }}
+<label class="f"><span>Batch (first-expiry-first-out suggested)</span><select name="stock_batch_id">{% for b in r.fefo %}<option value="{{ b.stock_batch_id }}">{{ b.batch_code }} · exp {{ b.expiry_date | d }} · {{ b.on_hand | num }} left · {{ b.mrp | money }}{{ ' (suggested)' if loop.first }}</option>{% else %}<option value="">no stock</option>{% endfor %}</select></label>
+{% if r.order_items %}<label class="f"><span>Short-stay order this supplies</span><select name="clinical_order_item_id"><option value="">not for an order (take-home)</option>{% for o in r.order_items %}<option value="{{ o.clinical_order_item_id }}">item {{ o.item_no }}: {{ o.dose_value | num }}{{ o.dose_unit }} {{ o.route or '' }}</option>{% endfor %}</select></label>{% endif %}
+<button class="btn ok" {{ 'disabled' if not r.fefo }}>Dispense</button>{% endcall %}</div>
+{% else %}<p class="muted">Nothing waiting for dispensing.</p>{% endfor %}
+{% endblock %}

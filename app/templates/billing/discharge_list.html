@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Discharge</h1>
+{% if rows %}<div class="tablewrap"><table><thead><tr><th>Visit</th><th>Patient</th><th>Status</th><th></th></tr></thead><tbody>
+{% for r in rows %}<tr><td>#{{ r.visit_id }}</td><td>{{ r.patient_name }} <span class="muted small">{{ r.display_code }}</span></td><td>{{ m.statusbadge(r.status) }}</td><td><a class="btn small primary" href="/billing/discharge/{{ r.visit_id }}">Checklist</a></td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="muted">No open visits.</p>{% endif %}
+{% endblock %}

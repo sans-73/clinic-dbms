@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Register new patient</h1>
+{% if candidates is none %}
+<p class="muted">Step 1: enter the details. The system will first look for people who may already be registered.</p>
+{% call m.form('/reception/patients/check', csrf, cls='card') %}
+<div class="row">
+ {{ m.field('First name', 'given_name', vals.given_name, required=True) }}{{ m.field('Middle name', 'middle_name', vals.middle_name) }}{{ m.field('Last name', 'family_name', vals.family_name, required=True) }}
+ {{ m.select('Gender', 'gender', genders, vals.gender, required=True) }}{{ m.field('Date of birth', 'date_of_birth', vals.date_of_birth, 'date') }}
+</div><div class="row">
+ {{ m.field('Mobile phone', 'phone', vals.phone, 'tel') }}{{ m.field('Aadhaar LAST 4 digits (optional)', 'aadhaar_last4', vals.aadhaar_last4, attrs='maxlength=4 pattern="[0-9]{4}" inputmode=numeric') }}
+</div><div class="row">
+ {{ m.field('Address', 'address_line', vals.address_line) }}{{ m.field('Locality', 'locality', vals.locality) }}{{ m.field('City', 'city', vals.city) }}{{ m.field('State', 'state', vals.state) }}{{ m.field('PIN', 'postal_code', vals.postal_code) }}
+</div><div class="row">
+ {{ m.field('Attendant / emergency contact', 'attendant_name', vals.attendant_name) }}{{ m.field('Relationship', 'attendant_relationship', vals.attendant_relationship) }}{{ m.field('Attendant phone', 'attendant_phone', vals.attendant_phone, 'tel') }}
+</div>
+<button class="btn primary">Check for duplicates →</button>
+{% endcall %}
+{% else %}
+<h2>Possible existing patients ({{ candidates | length }})</h2>
+{% if candidates %}
+<p>Look carefully. If the person is already here, open that record instead of creating a new one.</p>
+<div class="tablewrap"><table><thead><tr><th>Match</th><th>Score</th><th>Code</th><th>Name</th><th>DOB</th><th>Phone</th><th></th></tr></thead><tbody>
+{% for c in candidates %}<tr><td>{{ m.badge(c.tier or '?', 'warn') }}</td><td>{{ c.score if c.score is not none else '' }}</td><td>{{ c.display_code }}</td><td>{{ c.name }}</td><td>{{ c.date_of_birth | d }}</td><td>{{ c.phone or '' }}</td>
+<td><a class="btn small primary" href="/reception/patients/{{ c.patient_id }}">This is the same person</a></td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">No similar patient found.</p>{% endif %}
+<h2>Create as a new person</h2>
+{% call m.form('/reception/patients/create', csrf, cls='card') %}
+{% for k, v in vals.items() %}{% if v %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endif %}{% endfor %}
+<p><b>{{ vals.given_name }} {{ vals.family_name }}</b>, {{ vals.gender }}, DOB {{ vals.date_of_birth or '-' }}, phone {{ vals.phone or '-' }}</p>
+<label><input type="checkbox" name="confirm_new" value="1"> I checked: this is a NEW person, not one of the candidates above.</label>
+<p><button class="btn primary">Register patient</button> <a class="btn" href="/reception/patients/new">Edit details</a></p>
+{% endcall %}
+{% endif %}
+{% endblock %}

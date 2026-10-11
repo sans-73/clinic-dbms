@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+{% if not it %}<p class="muted">Order item not found.</p>{% else %}
+<h1>Record dose</h1>
+<div class="card"><b>{{ it.patient_name }}</b> <span class="muted">{{ it.display_code }}</span><br>Ordered: <b>{{ it.medicine }}</b> {{ it.dose_value | num }}{{ it.dose_unit or '' }} {{ it.route or '' }}<br><span class="muted small">{{ it.instructions or '' }}</span></div>
+{% call m.form('/nurse/dose/' ~ item_id, csrf, cls='card') %}
+<div class="row">{{ m.select('What happened', 'status', statuses, 'given', required=True, blank=False) }}{{ m.field('Time', 'occurred_at', now_input, 'datetime-local') }}</div>
+<div class="row">{{ m.field('Actual dose', 'actual_dose_value', it.dose_value | num, 'number', attrs='step=any') }}{{ m.field('Unit', 'actual_dose_unit', it.dose_unit) }}{{ m.select('Route', 'actual_route', routes, it.route) }}</div>
+<div class="row"><label class="f"><span>From which supplied pack</span><select name="order_item_supply_id"><option value="">-- none --</option>{% for s in it.supplies %}<option value="{{ s.order_item_supply_id }}">pack #{{ s.dispensing_id }} · {{ s.remaining | num }} left</option>{% endfor %}</select></label>
+{{ m.field('Quantity used (' ~ (it.stock_unit or 'stock units') ~ ')', 'quantity_consumed', '', 'number', attrs='step=any min=0') }}</div>
+{{ m.textarea('Reason (required if not given as ordered, or dose/route differs)', 'deviation_reason', rows=2) }}
+<button class="btn primary">Save dose</button> <a class="btn" href="/nurse">Cancel</a>{% endcall %}
+<h3>Recent doses</h3>{% for h in it.history %}<div>{{ h.occurred_at | dt }} · {{ m.badge(h.status) }} {{ h.actual_dose_value | num }}{{ h.actual_dose_unit or '' }} · {{ h.nurse }} {{ h.deviation_reason or '' }}</div>{% else %}<p class="muted">None yet.</p>{% endfor %}
+{% endif %}
+{% endblock %}

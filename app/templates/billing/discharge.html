@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+{% if not c %}<p class="muted">Visit not found (or stub mode).</p>{% else %}
+<h1>Discharge: {{ c.v.patient_name }} <span class="muted">{{ c.v.display_code }}</span></h1>
+{% if c.v.discharged %}<div class="flash ok">This patient is already discharged.</div>{% endif %}
+<div class="card"><h3>Checklist (live)</h3>
+{% for label, ok, hint in c['items'] %}<div style="padding:.3rem 0"><span class="{{ 'tick' if ok else 'cross' }}">{{ '✓' if ok else '✗' }}</span> {{ label }}{% if not ok %}<br><span class="muted small">→ {{ hint }}</span>{% endif %}</div>{% endfor %}
+{% if c.bill %}<p class="muted">Bill total {{ c.bill.total | money }} · balance {{ c.balance | money }}{% if c.bill.finalized %} · finalized{% endif %}</p>{% endif %}
+{% if c.rec %}<details><summary class="small">Medicine reconciliation</summary>{% for r in c.rec %}<div class="small">{{ r.brand_name }}: dispensed {{ r.dispensed | num }} = given {{ r.administered | num }} + returned {{ r.returned | num }} + family {{ r.to_family | num }} + unaccounted {{ r.remaining | num }}</div>{% endfor %}</details>{% endif %}</div>
+
+{% if c.basis == 'emergency_override' %}<div class="interrupt">Clinical emergency override on file. Payment step is bypassed; the balance stays on the dues list.</div>{% endif %}
+{% if not c.v.discharged %}
+{% call m.form('/billing/discharge/' ~ vid ~ '/go', csrf, cls='card') %}
+{% if c.basis != 'bill_settled' and c.balance > 0 %}{{ m.field('Promised-by date for the due amount', 'promised_by_date', '', 'date') }}{% endif %}
+<button class="btn ok" {{ 'disabled' if not c.ready }} data-confirm="Discharge now? This closes the visit, stay and bill.">Discharge patient</button>
+{% if not c.ready %}<span class="muted small">Complete the red items first.</span>{% endif %}{% endcall %}
+
+{% if c.bill and c.balance > 0 %}<div class="card"><h3>Cannot pay everything now?</h3>
+{% if c.partial %}<p>Request status: {{ m.badge(c.partial.status, 'ok' if c.partial.status == 'approved' else ('bad' if c.partial.status == 'rejected' else 'warn')) }} {{ c.partial.decision_reason or '' }}</p>{% endif %}
+{% if not c.partial or c.partial.status == 'rejected' %}{% call m.form('/billing/discharge/' ~ vid ~ '/partial', csrf, cls='row') %}{{ m.field('Amount left unpaid', 'deferred_amount', c.balance, 'number', True, attrs='step=0.01') }}{{ m.field('Will pay by', 'promised_by_date', '', 'date', True) }}{{ m.field('Reason', 'reason', '', required=True) }}<button class="btn">Ask owner to approve</button>{% endcall %}{% endif %}</div>{% endif %}
+{% endif %}
+{% endif %}
+{% endblock %}

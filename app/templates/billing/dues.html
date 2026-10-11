@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Dues</h1>
+{% if rows %}<div class="tablewrap"><table><thead><tr><th>Patient</th><th>Bill</th><th>Balance</th><th>Promised by</th><th>Phone</th><th></th></tr></thead><tbody>
+{% for r in rows %}<tr><td>{{ r.patient_name }} <span class="muted small">{{ r.display_code }}</span></td><td><a href="/billing/bill/{{ r.bill_id }}">{{ r.bill_number }}</a></td><td><b>{{ r.balance | money }}</b></td><td>{{ r.promised_by | d }} {% if r.overdue %}{{ m.badge('OVERDUE','bad') }}{% endif %}</td><td>{{ r.phone or '-' }}</td>
+<td>{% if user.role in ['ACCOUNTANT', 'RECEPTIONIST'] %}{% call m.form('/billing/dues/' ~ r.bill_id ~ '/remind', csrf, cls='inline') %}<button class="btn small">Send reminder</button>{% endcall %}{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="muted">No dues.</p>{% endif %}
+{% endblock %}

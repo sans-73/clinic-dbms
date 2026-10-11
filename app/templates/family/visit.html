@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+{% set v = d.v %}
+{% if not v %}<p class="muted">Nothing to show.</p>{% else %}
+<h1>{{ clinic_name }}</h1><p>Visit for <b>{{ v.given_name }} {{ v.family_name }}</b> on {{ v.occurred_at | d }} · {{ m.statusbadge(v.status) }}{% if v.doctor %} · Dr. {{ v.doctor }}{% endif %}</p>
+{% if d.signoff %}<div class="card"><h3>Doctor's instructions</h3><p>{{ d.signoff.discharge_instructions }}</p></div>{% endif %}
+{% if d.notes %}<div class="card"><h3>Notes from your doctor</h3>{% for n in d.notes %}<p>{{ n.note_text }}</p>{% endfor %}</div>{% endif %}
+<div class="card"><h3>Medicines prescribed</h3>{% if d.rx %}{% for i in d.rx.active_items %}<div><b>{{ i.medicine_name }}</b> {{ i.chosen_dose_text or '' }} · {{ i.chosen_schedule or '' }} · {{ i.food_instruction or '' }}{% if i.duration_days %} · {{ i.duration_days }} days{% endif %}</div>{% endfor %}{% else %}<p class="muted">None.</p>{% endif %}</div>
+{% if d.supply %}<div class="card"><h3>Medicine supplied for the stay</h3>{% for s in d.supply %}<div><b>{{ s.brand_name }}</b>: {{ s.dispensed | num }} supplied, {{ s.administered | num }} given, <b>{{ (s.dispensed - s.administered - s.returned - s.to_family) | num }} remaining</b>{% if s.returned or s.to_family %} ({{ s.returned | num }} returned to the clinic, {{ s.to_family | num }} handed to you){% endif %}</div>{% endfor %}</div>{% endif %}
+<div class="card"><h3>Lab reports</h3>{% for r in d.reports %}<div>{{ r.test_name }} · {{ r.recorded_at | d }} · <a href="/v/{{ token }}/report/{{ r.lab_report_id }}" target="_blank">Open report</a>{% if not r.reviewed %} <span class="muted small">(doctor has not reviewed yet)</span>{% endif %}</div>{% else %}<p class="muted">No reports yet.</p>{% endfor %}</div>
+{% if d.bill %}<div class="card"><h3>Bill {{ d.bill.bill_number }}</h3>{% for l in d.lines %}<div>{{ l.description_snapshot }} × {{ l.quantity | num }} = {{ l.amount | money }}</div>{% endfor %}
+<p>Total <b>{{ d.bill.total | money }}</b> · Paid {{ d.bill.paid | money }} · Balance <b>{{ d.bill.balance | money }}</b></p>
+{% for r in d.receipts %}<div class="muted small">Receipt {{ r.receipt_number }}: {{ r.amount | money }} ({{ r.method }}) on {{ r.recorded_at | d }}</div>{% endfor %}</div>{% endif %}
+{% if d.discharged %}<p class="muted">Discharged.</p>{% endif %}
+<p class="muted small">This page is read-only. For any question please call the clinic.</p>
+{% endif %}
+{% endblock %}

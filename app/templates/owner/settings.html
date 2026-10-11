@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Clinic settings</h1><p class="muted">Every policy value lives here, not in code. Edits are audited with old and new values.</p>
+{% for r in rows %}{% call m.form('/owner/settings', csrf, cls='row card') %}<input type="hidden" name="setting_key" value="{{ r.setting_key }}"><div style="min-width:220px"><b>{{ r.setting_key }}</b><br><span class="muted small">{{ r.description or '' }}</span></div><input name="setting_value" value="{{ r.setting_value }}" style="flex:1"><button class="btn small">Save</button>{% endcall %}{% endfor %}
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Daily cash handover (to accountant)</h1>
+<div class="card"><p>Cash from counter sales today (calculated): <span class="big">{{ expected | money }}</span></p>
+{% call m.form('/pharmacy/cash', csrf, cls='row') %}{{ m.field('From', 'period_start', start_in, 'datetime-local') }}{{ m.field('To', 'period_end', end_in, 'datetime-local') }}{{ m.field('Cash I am handing over', 'declared_amount', '', 'number', True, attrs='step=0.01 min=0') }}{{ m.field('Note', 'note') }}<button class="btn primary">Declare</button>{% endcall %}</div>
+<h2>My declarations</h2>{% for d in decls %}<div>{{ d.period_start | dt }} → {{ d.period_end | dt }} · declared {{ d.declared_amount | money }} · {% if d.counted is not none %}counted {{ d.counted | money }} {% if d.counted != d.declared_amount %}{{ m.badge('difference','bad') }}{% else %}{{ m.badge('matched','ok') }}{% endif %}{% else %}{{ m.badge('waiting for accountant','warn') }}{% endif %}</div>{% else %}<p class="muted">None.</p>{% endfor %}
+{% endblock %}

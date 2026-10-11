@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+{% if not b %}<p class="muted">Bill not found (or stub mode).</p>{% else %}
+<div class="row" style="justify-content:space-between"><h1>Bill {{ b.bill_number }} {{ m.badge(b.state, 'ok' if b.state == 'Settled' else ('info' if b.state == 'Finalized' else '')) }}</h1>
+<a class="btn" href="/billing/discharge/{{ b.visit_id }}">Discharge checklist</a></div>
+<p>{{ b.patient_name }} <span class="muted">{{ b.display_code }}</span> · visit #{{ b.visit_id }}</p>
+<div class="card"><span class="stat"><small>Total</small><span class="big">{{ b.total | money }}</span></span><span class="stat"><small>Paid</small><span class="big">{{ b.paid | money }}</span></span><span class="stat"><small>Refunded</small><span class="big">{{ b.refunded | money }}</span></span><span class="stat"><small>Balance</small><span class="big" style="color:{{ 'var(--bad)' if b.balance > 0 else 'var(--ok)' }}">{{ b.balance | money }}</span></span>
+<p class="muted small">Calculated from the lines and payments. Lines show the price at the time they were created.</p></div>
+
+<h2>Lines</h2>
+{% if b.lines %}<div class="tablewrap"><table><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Price</th><th>Amount</th><th></th></tr></thead><tbody>
+{% for l in b.lines %}<tr><td>{{ l.line_no }}</td><td>{{ l.description_snapshot }} {% if l.line_type in ['discount', 'free_service', 'return_credit'] %}{{ m.badge(l.line_type, 'info') }}{% elif l.line_type.startswith('post_') %}{{ m.badge('correction','warn') }}{% endif %}<br><span class="muted small">{{ l.reason or '' }}</span></td>
+<td>{{ l.quantity | num }}</td><td>{{ l.unit_price_snapshot | money }}</td><td>{{ l.amount | money }}</td><td>{% if l.is_manual_price %}{{ m.badge('manual price','warn') }}{% endif %}{% if l.is_price_deviation %}{{ m.badge('deviation','warn') }}{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="muted">No lines yet. Medicine and lab lines appear automatically; add fixed-price items below.</p>{% endif %}
+{% if prices and not b.finalized %}{% call m.form('/billing/bill/' ~ bid ~ '/line', csrf, cls='row card') %}
+<label class="f" style="flex:1"><span>Add from price list (consultation, stay, procedure, injection, drip)</span><select name="price_list_id" required><option value="">--</option>{% for p in prices %}<option value="{{ p.price_list_id }}">{{ p.category }} · {{ p.description }} · {{ p.price | money }}</option>{% endfor %}</select></label>{{ m.field('Qty', 'quantity', 1, 'number', attrs='step=any min=0') }}<button class="btn">Add</button>{% endcall %}{% endif %}
+{% if user.role in ['ACCOUNTANT', 'RECEPTIONIST'] and not b.finalized %}{% call m.form('/billing/bill/' ~ bid ~ '/finalize', csrf) %}<button class="btn primary" data-confirm="Finalize? After this only credit/debit lines can be added.">Finalize bill</button>{% endcall %}{% endif %}
+
+<div class="grid">
+<div class="card"><h3>Payments</h3>{% for p in b.payments %}<div>{{ p.recorded_at | dt }} · {{ p.payment_kind }} {{ p.amount | money }} · {{ p.method }} · <a href="/billing/receipt/{{ p.payment_id }}">{{ p.receipt_number }}</a></div>{% else %}<p class="muted">None.</p>{% endfor %}
+{% for r in b.refunds %}<div>{{ r.recorded_at | dt }} · refund {{ r.amount | money }} · {{ r.method }} · {{ r.receipt_number }}</div>{% endfor %}
+{% if user.role == 'ACCOUNTANT' %}{% call m.form('/billing/bill/' ~ bid ~ '/pay', csrf, cls='row') %}{{ m.field('Amount received', 'amount', b.balance if b.balance > 0 else '', 'number', True, attrs='step=0.01 min=0') }}{{ m.select('Method', 'method', methods, 'cash', blank=False) }}<button class="btn ok">Record payment</button>{% endcall %}{% endif %}</div>
+
+{% if user.role in ['ACCOUNTANT', 'DOCTOR', 'RECEPTIONIST'] %}<div class="card"><h3>Ask the owner to approve</h3>
+{% call m.form('/billing/bill/' ~ bid ~ '/request', csrf, cls='stack') %}
+{{ m.select('What', 'kind', ([('discount', 'Discount'), ('free_service', 'Free service'), ('post_finalization_bill_correction', 'Correction after finalization (credit/debit)')] + ([('refund', 'Refund'), ('payment_reversal', 'Reverse a payment (entered by mistake)')] if user.role == 'ACCOUNTANT' else [])), required=True) }}
+{{ m.field('Amount', 'amount', '', 'number', attrs='step=0.01 min=0') }}
+{% if user.role == 'ACCOUNTANT' and b.payments %}{{ m.select('Payment concerned (refund / reversal)', 'payment_id', b.payments | opts('payment_id', 'receipt_number')) }}{{ m.select('Refund method', 'method', methods) }}{% endif %}
+{{ m.field('Correction type', 'line_type', 'post_finalization_credit', attrs='list=lt') }}<datalist id="lt"><option>post_finalization_credit</option><option>post_finalization_debit</option></datalist>
+{{ m.textarea('Reason (required)', 'reason', required=True, rows=2) }}<button class="btn">Send request</button>{% endcall %}</div>{% endif %}
+</div>
+
+<h2>Approval requests for this bill</h2>
+{% for r in b.approvals %}<div class="card">{{ m.badge(r.status, 'ok' if r.status in ['approved', 'consumed'] else ('bad' if r.status == 'rejected' else 'warn')) }} <b>{{ r.request_type }}</b> {{ r.requested_amount | money if r.requested_amount is not none }} · <span class="muted small">{{ r.recorded_at | dt }}</span><br>{{ r.reason }}
+{% if r.decision_reason %}<br><span class="muted small">Owner: {{ r.decision_reason }}</span>{% endif %}
+{% if r.can_complete and user.role in ['ACCOUNTANT', 'DOCTOR', 'RECEPTIONIST'] %}{% call m.form('/billing/approval/' ~ r.approval_request_id ~ '/complete', csrf, cls='inline', nxt='/billing/bill/' ~ bid) %}<button class="btn ok small">Complete the approved action</button>{% endcall %}{% endif %}</div>{% else %}<p class="muted">None.</p>{% endfor %}
+{% if b.promises %}<h2>Promised payment dates</h2>{% for p in b.promises %}<div>by {{ p.promised_by_date | d }} · {{ p.reason }}</div>{% endfor %}{% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Family links</h1><p class="muted">Read-only link for one visit. The family opens it with the patient's date of birth (or a printed code if the patient is unknown).</p>
+{% if created %}<div class="card" style="border:2px solid var(--ok)"><h3>Link created (shown only now)</h3><p><b>{{ created.url or 'URL not returned by the database procedure' }}</b></p>{% if created.printed_code %}<p>Printed code (give on paper): <span class="big">{{ created.printed_code }}</span></p>{% endif %}<p class="muted small">Message sent (simulated) to {{ created.phone or 'no phone' }}.</p></div>{% endif %}
+<form method="get" class="row card"><label class="f" style="flex:1"><span>Visit</span><select name="visit_id" onchange="this.form.submit()"><option value="">choose…</option>{% for v in visits %}<option value="{{ v.visit_id }}" {{ 'selected' if v.visit_id == visit_id }}>#{{ v.visit_id }} · {{ v.name }} · {{ v.display_code }} ({{ v.links }} link{{ 's' if v.links != 1 }})</option>{% endfor %}</select></label></form>
+{% if visit_id %}
+{% call m.form('/family/links/create', csrf, cls='card') %}<input type="hidden" name="visit_id" value="{{ visit_id }}"><h3>Create link</h3>
+<div class="row">{{ m.select('Who receives it', 'attendant_id', att | opts('patient_attendant_id', 'name'), required=True) }}{{ m.select('Second factor', 'second_factor_kind', [('date_of_birth', 'Patient date of birth'), ('printed_code', 'Printed code (no DOB / emergency patient)')], 'date_of_birth', blank=False) }}{{ m.field('Consent note', 'consent_note', '', required=True, placeholder='e.g. son agreed on phone') }}</div><button class="btn primary">Create and send</button>{% endcall %}
+{% for l in links %}<div class="card">Link #{{ l.family_link_id }} · {{ l.attendant or '-' }} · expires {{ l.expires_at | d }} · opened {{ l.opens }}× · failed tries {{ l.failures }} {% if l.revoked %}{{ m.badge('revoked','bad') }}{% else %}{% call m.form('/family/links/' ~ l.family_link_id ~ '/revoke', csrf, cls='inline', nxt='/family/links?visit_id=' ~ visit_id) %}<input type="hidden" name="reason" value="Revoked by staff"><button class="btn small danger" data-confirm="Switch this link off now?">Revoke</button>{% endcall %}{% endif %}</div>{% endfor %}
+{% endif %}
+{% endblock %}

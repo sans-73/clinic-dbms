@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Leftover medicine: nurse requests</h1>
+{% for r in rows %}<div class="card"><b>{{ r.brand_name }}</b> · {{ r.quantity | num }} {{ r.stock_unit }} · patient {{ r.patient_name or '-' }} · asked by {{ r.asked_by }} {% if r.returnable %}{{ m.badge('returnable item','ok') }}{% else %}{{ m.badge('not returnable','bad') }}{% endif %}
+<p class="muted">Condition: {{ r.condition_note or '-' }}</p>
+{% call m.form('/pharmacy/leftovers/' ~ r.leftover_return_request_id ~ '/decide', csrf, cls='row') %}<input name="decision_reason" placeholder="reason (required)" required style="flex:1">
+<button class="btn ok" name="decision" value="accepted">Accept: back to stock + credit bill</button><button class="btn" name="decision" value="refused">Refuse: hand to family</button>{% endcall %}</div>
+{% else %}<p class="muted">No pending requests.</p>{% endfor %}
+{% endblock %}

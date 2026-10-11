@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Message outbox <span class="muted small">(simulated SMS / WhatsApp, nothing is really sent)</span></h1>
+{% if rows %}<div class="tablewrap"><table><thead><tr><th>When</th><th>Type</th><th>To</th><th>Template</th><th>State</th></tr></thead><tbody>{% for r in rows %}<tr><td>{{ r.recorded_at | dt }}</td><td>{{ r.message_type }}</td><td>sent to {{ r.recipient_phone | mask }}</td><td>{{ r.safe_template_key }}</td><td>{{ r.state or 'queued' }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="muted">No messages yet.</p>{% endif %}
+<p class="muted small">Message text never contains patient details: only the clinic name and a link.</p>
+{% endblock %}

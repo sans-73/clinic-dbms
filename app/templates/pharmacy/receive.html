@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Receive stock</h1>
+{% call m.form('/pharmacy/receive', csrf, cls='card') %}
+<div class="row">{{ m.select('Medicine', 'medicine_id', meds | opts('medicine_id', 'brand_name'), required=True) }}{{ m.field('Batch code', 'batch_code', '', required=True) }}{{ m.field('Expiry date', 'expiry_date', '', 'date', True) }}{{ m.field('Quantity (stock units)', 'quantity', '', 'number', True, attrs='step=any min=0') }}</div>
+<div class="row">{{ m.field('Cost price (per unit)', 'cost_price', '', 'number', True, attrs='step=0.01 min=0') }}{{ m.field('MRP (selling, per unit)', 'mrp', '', 'number', True, attrs='step=0.01 min=0') }}{{ m.select('Supplier (optional)', 'supplier_id', suppliers | opts('supplier_id', 'name')) }}</div>
+<button class="btn primary">Receive</button>{% endcall %}
+{% endblock %}

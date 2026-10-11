@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+{% if not sm %}<p class="muted">Visit not found (or stub mode).</p>{% else %}
+{% set v = sm.v %}
+<div class="row" style="justify-content:space-between"><h1>{{ v.name }} <span class="muted">{{ v.display_code }}</span> {{ m.statusbadge(v.status) }}</h1>
+<div class="row"><a class="btn primary" href="/doctor/visit/{{ vid }}/prescribe">Prescribe</a><a class="btn" href="/doctor/visit/{{ vid }}/prescription/print" target="_blank">Print prescription</a></div></div>
+<p class="muted">Visit #{{ vid }} · {{ v.occurred_at | dt }} · {{ v.gender }}{% if v.date_of_birth %}, {{ v.date_of_birth | age }} y{% endif %}{% if v.closed %} · <b>CLOSED</b>{% endif %}</p>
+{% if sm.allergies %}<div class="interrupt">ALLERGIES: {% for al in sm.allergies %}{{ al.allergen }}{% if al.reaction %} ({{ al.reaction }}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</div>{% else %}<p class="muted">No allergies recorded.</p>{% endif %}
+
+<div class="grid">
+<div class="card"><h3>Latest vitals</h3>{% if sm.vitals %}<dl class="kv">{% for k, o in sm.vitals.items() %}<dt>{{ k }}</dt><dd>{{ o.numeric_value | num }}{{ o.text_value or '' }} {{ o.unit or '' }} <span class="muted small">{{ o.recorded_at | t }}</span></dd>{% endfor %}</dl>{% else %}<p class="muted">None yet.</p>{% endif %}
+{% if sm.blood_group %}<p>Blood group: <b>{{ sm.blood_group.abo_group }}{{ sm.blood_group.rh_factor }}</b></p>{% endif %}</div>
+
+<div class="card"><h3>Diagnosis</h3>{% for d in sm.diagnoses %}<div>{{ d.diagnosis_text }} {% if d.diagnosis_code %}<span class="muted">({{ d.diagnosis_code }})</span>{% endif %}</div>{% else %}<p class="muted">None yet.</p>{% endfor %}
+{% call m.form('/doctor/visit/' ~ vid ~ '/diagnosis', csrf, cls='row') %}{{ m.field('Add diagnosis', 'diagnosis_text', '', required=True) }}{{ m.field('Code', 'diagnosis_code') }}<button class="btn small">Save</button>{% endcall %}</div>
+
+<div class="card"><h3>Prescription</h3>
+{% if sm.rx %}<p class="muted small">Version {{ sm.rx.version_number }} · {{ sm.rx.recorded_at | dt }}</p>
+{% for i in sm.rx.active_items %}<div><b>{{ i.medicine_name }}</b> {{ i.chosen_dose_text or '' }} {{ i.chosen_schedule or '' }} {{ i.food_instruction or '' }} {% if i.duration_days %}× {{ i.duration_days }} d{% endif %}
+ {% if not i.medicine_id %}{{ m.badge('free text','warn') }}{% endif %} {% if i.line_status and i.line_status != 'prescribed' %}{{ m.badge(i.line_status) }}{% endif %}
+ {% call m.form('/doctor/rx-line/' ~ i.prescription_line_id ~ '/status', csrf, cls='inline', nxt='/doctor/visit/' ~ vid) %}<select name="status" onchange="this.form.submit()" style="width:auto"><option value="">status…</option><option value="bought_outside">bought outside</option><option value="not_needed">not needed</option><option value="cancelled">cancelled</option></select>{% endcall %}</div>{% endfor %}
+{% else %}<p class="muted">No prescription yet.</p>{% endif %}
+<p><a class="btn small primary" href="/doctor/visit/{{ vid }}/prescribe">{{ 'New version' if sm.rx else 'Write prescription' }}</a></p></div>
+</div>
+
+<h2>Notes</h2>
+<div class="card">{% for n in sm.notes %}<div><span class="muted small">{{ n.recorded_at | dt }} · {{ n.author }}</span> {% if n.sharing_classification == 'not_for_sharing' %}{{ m.badge('not for family','warn') }}{% endif %}<br>{{ n.note_text }}</div><hr>{% else %}<p class="muted">No notes yet.</p>{% endfor %}
+{% call m.form('/doctor/visit/' ~ vid ~ '/note', csrf, cls='stack') %}{{ m.textarea('New note / reassessment (notes cannot be edited; add an amendment)', 'note_text', required=True) }}
+{{ m.select('Share with family link?', 'sharing_classification', [('shareable', 'Shareable'), ('not_for_sharing', 'NOT for sharing')], 'shareable', blank=False) }}<button class="btn">Save note</button>{% endcall %}</div>
+
+<h2>Lab tests</h2>
+<div class="card">{% for l in sm.labs %}<div><b>{{ l.test_name }}</b> · {{ l.lab_name }} · {% for step, done in l.trail %}<span class="{{ 'tick' if done else 'muted' }}">{{ '✓' if done else '○' }} {{ step }}</span>{% if not loop.last %} › {% endif %}{% endfor %}
+ {% if l.crit == 'critical' %}{{ m.badge('CRITICAL','bad') }}{% endif %}{% if l.report_id and not l.reviewed %} <a class="btn small" href="/doctor/reports">Review</a>{% endif %}</div>{% else %}<p class="muted">None ordered.</p>{% endfor %}
+{% call m.form('/doctor/visit/' ~ vid ~ '/lab', csrf, cls='row') %}{{ m.select('Lab', 'outside_lab_id', labs | opts('outside_lab_id', 'name'), required=True) }}{{ m.field('Test', 'test_name', '', required=True) }}<button class="btn">Order test</button>{% endcall %}</div>
+
+<h2>Short stay and orders</h2>
+<div class="card">
+{% if v.short_stay_episode_id %}<p>{{ m.badge('Short stay active','info') }}
+{% call m.form('/doctor/visit/' ~ vid ~ '/stay-close', csrf, cls='inline') %}<input type="hidden" name="short_stay_episode_id" value="{{ v.short_stay_episode_id }}"><button class="btn small" data-confirm="End the short stay?">End stay</button>{% endcall %}</p>
+{% call m.form('/doctor/visit/' ~ vid ~ '/stay-extension', csrf, cls='row') %}<input type="hidden" name="short_stay_episode_id" value="{{ v.short_stay_episode_id }}">{{ m.field('Extend stay until', 'extended_until', '', 'datetime-local') }}{{ m.field('Reason', 'reason') }}<button class="btn small">Request extension</button>{% endcall %}
+{% for o in sm.orders %}<div class="card"><b>Order #{{ o.clinical_order_id }}</b> {{ m.badge(o.status or '-') }}
+ {% for i in o.items %}<div>{{ i.name or i.item_kind }} {{ i.dose_value | num }}{{ i.dose_unit or '' }} {{ i.route or '' }} {% if i.repeat_interval_minutes %}every {{ i.repeat_interval_minutes }} min{% endif %} {{ m.badge(i.status or '-') }}
+   {% if i.status == 'active' %}{% call m.form('/doctor/order-item/' ~ i.clinical_order_item_id ~ '/stop', csrf, cls='inline', nxt='/doctor/visit/' ~ vid) %}<button class="btn small" data-confirm="Stop this order item?">Stop</button>{% endcall %}{% endif %}</div>{% endfor %}
+ {% if o.status == 'ordered' %}{% call m.form('/doctor/order/' ~ o.clinical_order_id ~ '/status', csrf, cls='inline', nxt='/doctor/visit/' ~ vid) %}<input type="hidden" name="status" value="finalized"><button class="btn small ok">Finalize (nurses can see)</button>{% endcall %}{% endif %}</div>{% endfor %}
+<details><summary><b>New order</b></summary>
+{% call m.form('/doctor/visit/' ~ vid ~ '/order', csrf, cls='stack') %}
+<div class="row">{{ m.select('Kind', 'item_kind', ['medication', 'procedure', 'observation'], 'medication', blank=False) }}
+<label class="f"><span>Medicine (catalog)</span><select name="medicine_id"><option value="">--</option>{% for md in meds %}<option value="{{ md.medicine_id }}">{{ md.brand_name }} {{ md.strength_value | num }}{{ md.strength_unit or '' }}</option>{% endfor %}</select></label>
+{{ m.field('or free text', 'free_text') }}</div>
+<div class="row">{{ m.field('Dose', 'dose_value', '', 'number', attrs='step=any') }}{{ m.field('Unit', 'dose_unit', 'mg') }}{{ m.select('Route', 'route', routes) }}{{ m.field('First due', 'first_scheduled_at', now_input, 'datetime-local') }}{{ m.field('Repeat every (min)', 'repeat_interval_minutes', '', 'number') }}{{ m.field('Quantity', 'quantity_ordered', '', 'number', attrs='step=any') }}</div>
+{{ m.field('Instructions', 'instructions') }}<label><input type="checkbox" name="finalize" value="1" checked> Finalize now (visible to nurses)</label>
+<button class="btn primary">Create order</button>{% endcall %}</details>
+{% else %}{% call m.form('/doctor/visit/' ~ vid ~ '/stay', csrf, cls='row') %}{{ m.field('Start a short-stay episode: reason', 'admission_reason', '', required=True) }}<button class="btn">Start stay</button>{% endcall %}{% endif %}
+</div>
+
+<h2>Finish</h2>
+<div class="grid">
+<div class="card"><h3>Clinical sign-off</h3>{% if sm.signoff %}<p>{{ m.badge('signed off','ok') }} {{ sm.signoff.recorded_at | dt }}<br>{{ sm.signoff.discharge_instructions }}</p>{% endif %}
+{% call m.form('/doctor/visit/' ~ vid ~ '/signoff', csrf, cls='stack') %}{{ m.textarea('Discharge instructions', 'discharge_instructions', sm.signoff.discharge_instructions if sm.signoff else '', 4) }}<button class="btn ok">{{ 'Sign off again' if sm.signoff else 'Sign off' }}</button>{% endcall %}</div>
+<div class="card"><h3>Clinical emergency override</h3><p class="muted small">Bypasses ONLY the payment step of discharge. Logged, owner alerted immediately. Medical documents are never withheld.</p>
+{% call m.form('/doctor/visit/' ~ vid ~ '/override', csrf, cls='stack') %}{{ m.textarea('Clinical justification', 'clinical_justification', required=True, rows=2) }}<button class="btn danger" data-confirm="Record an emergency override? The owner will be alerted.">Record override</button>{% endcall %}</div>
+</div>
+{% if sm.history %}<h2>Previous visits</h2>{% for h in sm.history %}<div>#{{ h.visit_id }} · {{ h.occurred_at | d }} · {{ h.diagnosis or '-' }}</div>{% endfor %}{% endif %}
+{% endif %}
+{% endblock %}

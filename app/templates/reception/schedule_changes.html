@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Doctor schedule change requests</h1>
+<p class="muted">A doctor requests, you apply or decline. The old timing stays in history; appointments on old slots appear for rebooking.</p>
+{% for r in rows %}<div class="card"><b>{{ r.doctor_name }}</b> · {{ r.change_kind }} · weekday {{ r.proposed_weekday }} {{ r.proposed_start_time }}–{{ r.proposed_end_time }} ({{ r.proposed_slot_minutes }} min) from {{ r.proposed_valid_from | d }}
+<p>{{ r.reason }}</p>
+{% call m.form('/reception/schedule-changes/' ~ r.schedule_change_request_id ~ '/apply', csrf, cls='row') %}<input name="reason" placeholder="note (optional)"><button class="btn ok" name="outcome" value="applied">Apply</button><button class="btn" name="outcome" value="declined">Decline</button>{% endcall %}</div>
+{% else %}<p class="muted">No pending requests.</p>{% endfor %}
+{% endblock %}

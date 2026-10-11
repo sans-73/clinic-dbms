@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card narrow center"><h1>{{ clinic_name }}</h1><p>Your visit details. Please confirm who you are.</p>
+{% for kind, msg in flashes %}{% endfor %}
+<form method="post" action="/v/{{ token }}" class="stack"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+<label class="f"><span>Patient's date of birth</span><input type="date" name="dob"></label>
+<details><summary class="small">No date of birth on file? Use the code printed on your slip</summary><label class="f"><span>Printed code</span><input name="printed_code" autocomplete="off"></label></details>
+<button class="btn primary">Open</button></form>
+<p class="muted small">After 5 wrong tries the link is locked for a while. Every attempt is recorded.</p></div>
+{% endblock %}

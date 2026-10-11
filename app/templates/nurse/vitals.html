@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Vitals</h1>
+<form method="get" class="row card"><label class="f"><span>Patient visit</span><select name="visit_id" onchange="this.form.submit()"><option value="">choose…</option>{% for v in visits %}<option value="{{ v.visit_id }}" {{ 'selected' if v.visit_id == visit_id }}>{{ v.name }} · {{ v.display_code }}{{ ' (stay)' if v.stay }}</option>{% endfor %}</select></label><noscript><button class="btn">Open</button></noscript></form>
+{% if visit_id %}
+{% call m.form('/nurse/vitals', csrf, cls='card') %}<input type="hidden" name="visit_id" value="{{ visit_id }}">
+<div class="row">{{ m.field('BP upper', 'bp_systolic', '', 'number', attrs='step=1') }}{{ m.field('BP lower', 'bp_diastolic', '', 'number', attrs='step=1') }}{{ m.field('Pulse (bpm)', 'pulse', '', 'number') }}{{ m.field('Temp (°C)', 'temperature', '', 'number', attrs='step=0.1') }}{{ m.field('SpO2 (%)', 'spo2', '', 'number') }}{{ m.field('Resp (/min)', 'resp_rate', '', 'number') }}{{ m.field('Weight (kg)', 'weight', '', 'number', attrs='step=0.1') }}{{ m.field('Glucose (mg/dL)', 'blood_glucose', '', 'number') }}</div>
+<button class="btn primary">Save vitals</button>{% endcall %}
+<h2>Trend</h2>{% for k, rows in trend.items() %}<div class="card"><b>{{ k }}</b> {{ rows | map(attribute='numeric_value') | list | spark }} <span class="muted small">{% for r in rows[-6:] %}{{ r.numeric_value | num }}{{ ', ' if not loop.last }}{% endfor %} {{ rows[-1].unit or '' }}</span></div>{% else %}<p class="muted">No readings yet.</p>{% endfor %}
+{% endif %}
+{% endblock %}

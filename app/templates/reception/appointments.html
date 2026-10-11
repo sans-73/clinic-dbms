@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Appointments</h1>
+<form method="get" class="row card">
+  <label class="f"><span>Date</span><input type="date" name="date" value="{{ day }}"></label>
+  <label class="f"><span>Doctor</span><select name="doctor">{% for d in doctors %}<option value="{{ d.staff_id }}" {{ 'selected' if d.staff_id == doctor }}>{{ d.name }}</option>{% endfor %}</select></label>
+  {% if patient_id %}<input type="hidden" name="patient_id" value="{{ patient_id }}">{% endif %}
+  <button class="btn">Show</button>
+</form>
+
+<div class="card"><h3>Patient for new booking</h3>
+{% if patient %}<p><b>{{ patient.name }}</b> <span class="muted">{{ patient.display_code }}</span> <a class="small" href="/reception/appointments?date={{ day }}&doctor={{ doctor }}">change</a></p>
+{% else %}<form method="get" class="row"><input type="hidden" name="date" value="{{ day }}"><input type="hidden" name="doctor" value="{{ doctor }}"><label class="f" style="flex:1"><span>Search patient</span><input name="q" value="{{ q }}"></label><button class="btn">Find</button></form>
+{% for r in found %}<div><a href="/reception/appointments?date={{ day }}&doctor={{ doctor }}&patient_id={{ r.patient_id }}">{{ r.given_name }} {{ r.family_name }} · {{ r.display_code }} · {{ r.phone or '' }}</a></div>{% endfor %}{% endif %}</div>
+
+<h2>Slots</h2>
+{% if slots %}<div class="row">
+{% for s in slots %}
+  {% if s.bookable and patient_id %}
+  {% call m.form('/reception/appointments/book', csrf) %}<input type="hidden" name="patient_id" value="{{ patient_id }}"><input type="hidden" name="doctor_staff_id" value="{{ doctor }}"><input type="hidden" name="appointment_slot_id" value="{{ s.appointment_slot_id }}"><input type="hidden" name="day" value="{{ day }}">
+  <button class="btn ok">{{ s.slot_start | t }} free</button>{% endcall %}
+  {% elif s.bookable %}<span class="btn" title="Choose a patient first">{{ s.slot_start | t }} free</span>
+  {% elif s.booked_name %}<span class="btn" style="background:#fdecea" title="{{ s.booked_name }}">{{ s.slot_start | t }} {{ s.booked_name }}</span>
+  {% else %}<span class="btn" style="opacity:.5">{{ s.slot_start | t }} n/a</span>{% endif %}
+{% endfor %}</div>
+{% else %}<p class="muted">No slots for this doctor on this day.</p>{% endif %}
+<details class="card"><summary>Generate slots from the doctor's schedule</summary>
+{% call m.form('/reception/slots/generate', csrf, cls='row', nxt='/reception/appointments?date=' ~ day ~ '&doctor=' ~ doctor) %}<input type="hidden" name="doctor_staff_id" value="{{ doctor }}">{{ m.field('From', 'from_date', day, 'date') }}{{ m.field('To', 'to_date', day, 'date') }}<button class="btn">Generate</button>{% endcall %}</details>
+
+<h2>Booked appointments</h2>
+{% if appts %}<div class="tablewrap"><table><thead><tr><th>Time</th><th>Patient</th><th>Doctor</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+{% for a in appts %}<tr><td>{{ a.slot_start | t }}</td><td><a href="/reception/patients/{{ a.patient_id }}">{{ a.name }}</a> <span class="muted small">{{ a.display_code }}</span></td><td>{{ a.doctor_name }}</td><td>{{ m.statusbadge(a.status) }}</td>
+<td class="row">
+ {% if a.status in ['Booked'] %}{% call m.form('/reception/appointments/' ~ a.appointment_id ~ '/checkin', csrf) %}<button class="btn small ok">Check in</button>{% endcall %}{% endif %}
+ {% if a.status in ['Booked', 'Checked-in', 'Waiting'] and not a.visit_id %}
+  {% call m.form('/reception/appointments/' ~ a.appointment_id ~ '/status', csrf, cls='row', nxt='/reception/appointments?date=' ~ day ~ '&doctor=' ~ doctor) %}<input type="hidden" name="reason" value="">
+  <button class="btn small" name="status" value="Cancelled" data-confirm="Cancel this appointment?">Cancel</button><button class="btn small" name="status" value="No-show">No-show</button>{% endcall %}
+ {% endif %}
+ {% if a.status == 'Booked' %}<details><summary class="small">Reschedule</summary>
+  {% call m.form('/reception/appointments/' ~ a.appointment_id ~ '/reschedule', csrf, cls='row', nxt='/reception/appointments?date=' ~ day ~ '&doctor=' ~ doctor) %}
+  <select name="appointment_slot_id">{% for s in slots if s.bookable %}<option value="{{ s.appointment_slot_id }}">{{ s.slot_start | t }}</option>{% endfor %}</select><input name="reason" placeholder="reason" required><button class="btn small">Move</button>{% endcall %}</details>{% endif %}
+</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="muted">None.</p>{% endif %}
+{% endblock %}

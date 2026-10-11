@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Audit log <span class="muted small">(read-only, nobody can edit it)</span></h1>
+<form method="get" class="row card">
+<label class="f"><span>Table</span><select name="entity"><option value="">all</option>{% for e in entities %}<option {{ 'selected' if e == entity }}>{{ e }}</option>{% endfor %}</select></label>
+<label class="f"><span>Person</span><select name="staff_id"><option value="">all</option>{% for s in staff %}<option value="{{ s.staff_id }}" {{ 'selected' if s.staff_id == staff_id }}>{{ s.given_name }} {{ s.family_name }}</option>{% endfor %}</select></label>
+<label class="f"><span>From</span><input type="date" name="from" value="{{ dfrom }}"></label><label class="f"><span>To</span><input type="date" name="to" value="{{ dto }}"></label>
+<label class="f"><span>Action contains</span><input name="action" value="{{ action }}"></label><button class="btn">Filter</button></form>
+{% if rows %}<div class="tablewrap"><table><thead><tr><th>When</th><th>Who</th><th>Action</th><th>What</th><th>Old → New</th></tr></thead><tbody>
+{% for r in rows %}<tr><td>{{ r.recorded_at | dt }}</td><td>{{ r.staff or '' }} <span class="muted small">{{ r.recorded_by_role or '' }}</span></td><td>{{ r.action }}</td><td>{{ r.entity_type }} #{{ r.entity_id }}</td>
+<td class="small"><code>{{ r.old_values or '' }}</code> → <code>{{ r.new_values or '' }}</code>{% if r.reason %}<br>{{ r.reason }}{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+<p>{% if page > 0 %}<a class="btn small" href="?entity={{ entity }}&staff_id={{ staff_id or '' }}&action={{ action }}&from={{ dfrom }}&to={{ dto }}&page={{ page - 1 }}">← newer</a>{% endif %} <a class="btn small" href="?entity={{ entity }}&staff_id={{ staff_id or '' }}&action={{ action }}&from={{ dfrom }}&to={{ dto }}&page={{ page + 1 }}">older →</a></p>{% else %}<p class="muted">No entries.</p>{% endif %}
+{% endblock %}

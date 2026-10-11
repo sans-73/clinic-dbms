@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<div class="row" style="justify-content:space-between"><h1>Daily summary <span class="muted small">{{ today }}</span></h1>
+{% call m.form('/owner/run-checks', csrf, cls='inline') %}<button class="btn small">Run checks now</button>{% endcall %}</div>
+<h2 style="color:var(--bad)">Needs your decision ({{ s.red | length }})</h2>
+{% for x in s.red %}<a class="card" style="display:flex;justify-content:space-between;text-decoration:none;color:inherit;border-left:5px solid var(--bad)" href="{{ x.link }}"><span>{{ x.label }}</span><b>{{ x.n }}</b></a>{% else %}<p class="muted">Nothing needs a decision.</p>{% endfor %}
+<h2 style="color:var(--warn)">Unusual patterns ({{ s.amber | length }})</h2>
+{% for x in s.amber %}<a class="card" style="display:flex;justify-content:space-between;text-decoration:none;color:inherit;border-left:5px solid var(--warn)" href="{{ x.link }}"><span>{{ x.label }}</span><b>{{ x.n }}</b></a>{% else %}<p class="muted">No unusual patterns.</p>{% endfor %}
+<h2 style="color:var(--ok)">Clean checks ({{ s.clean | length }})</h2>
+<div class="card">{% for x in s.clean %}<div><span class="tick">✓</span> {{ x.label }}</div>{% endfor %}</div>
+{% if s.unknown %}<p class="muted small">Could not evaluate: {% for x in s.unknown %}{{ x.label }}{{ '; ' if not loop.last }}{% endfor %} (database object missing, see Diagnostics).</p>{% endif %}
+{% endblock %}

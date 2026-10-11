@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Delegated authority</h1><p class="muted">Let a trusted person approve small items (discounts, partial payments) up to a limit, or act as backup when you are unreachable.</p>
+{% call m.form('/owner/delegations', csrf, cls='card') %}<div class="row">{{ m.select('Person', 'delegate_staff_id', staff | selectattr('principal_kind', 'equalto', 'human') | list | opts('staff_id', 'given_name'), required=True) }}{{ m.select('Scope', 'scope', ['discount', 'partial_payment', 'approval_backup', 'alert_escalation_backup'], required=True) }}{{ m.field('Limit (₹)', 'limit_amount', '', 'number', attrs='step=0.01') }}{{ m.field('From', 'valid_from', today, 'date', True) }}{{ m.field('Until', 'valid_to', '', 'date', True) }}<button class="btn primary">Grant</button></div>{% endcall %}
+{% for d in rows %}<div class="card">{{ d.delegate }} · {{ d.scope }} · limit {{ d.limit_amount | money if d.limit_amount is not none else '-' }} · {{ d.valid_from | d }} → {{ d.valid_to | d }} {% if d.revoked %}{{ m.badge('revoked','bad') }}{% else %}{% call m.form('/owner/delegations/' ~ d.authority_delegation_id ~ '/revoke', csrf, cls='inline') %}<button class="btn small" data-confirm="Revoke now?">Revoke</button>{% endcall %}{% endif %}</div>{% else %}<p class="muted">None.</p>{% endfor %}
+{% endblock %}

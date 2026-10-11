@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+{% if not s %}<p class="muted">Sale not found.</p>{% else %}
+<h1>Sale {{ s.sale_number }} <span class="muted">{{ s.display_name or s.temporary_code or s.phone or '' }}</span></h1>
+<div class="grid">
+<div class="card"><h3>Items</h3>{% if s.lines %}<div class="tablewrap"><table><thead><tr><th>Medicine</th><th>Qty</th><th>Price</th><th>Amount</th><th></th></tr></thead><tbody>
+{% for l in s.lines %}<tr><td>{{ l.brand_name }} {{ m.badge(l.source_type) }}</td><td>{{ l.qty | num }}</td><td>{{ l.unit_price | money }}</td><td>{{ l.amount | money }}</td>
+<td><details><summary class="small">Return</summary>{% call m.form('/pharmacy/counter/' ~ s.counter_sale_id ~ '/return', csrf, cls='row') %}<input type="hidden" name="dispensing_id" value="{{ l.dispensing_id }}"><input name="quantity" type="number" step="any" placeholder="qty" required style="width:70px"><input name="reason" placeholder="reason" required><button class="btn small">Return</button>{% endcall %}</details></td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="muted">No items yet.</p>{% endif %}
+<p class="big">{{ s.total | money }}</p></div>
+<div class="card"><h3>Add item</h3>
+{% call m.form('/pharmacy/counter/' ~ s.counter_sale_id ~ '/line', csrf, cls='stack') %}
+{{ m.select('Type', 'source_type', [('otc', 'Over the counter (no prescription)'), ('outside_prescription', 'On outside prescription')], 'otc', blank=False) }}
+<label class="f"><span>Medicine (OTC list excludes Schedule H/H1/X)</span><select name="medicine_id" required><option value="">--</option>{% for x in meds %}<option value="{{ x.medicine_id }}">{{ x.brand_name }} {{ x.strength_value | num }}{{ x.strength_unit or '' }}{{ ' [Sch ' ~ x.schedule_class ~ ']' if x.schedule_class != 'none' }}</option>{% endfor %}</select></label>
+{{ m.field('Quantity', 'quantity', '', 'number', True, attrs='step=any min=0') }}<button class="btn primary">Add</button>{% endcall %}
+{% if s.prescriptions %}<p class="small muted">Outside prescription on file: {{ s.prescriptions[0].prescriber_name }} (Reg {{ s.prescriptions[0].prescriber_registration_no }})</p>{% else %}
+<details><summary class="small">Record outside prescription</summary>{% call m.form('/pharmacy/counter/' ~ s.counter_sale_id ~ '/rx', csrf, cls='row') %}{{ m.field('Doctor', 'prescriber_name', '', required=True) }}{{ m.field('Reg. no.', 'prescriber_registration_no', '', required=True) }}{{ m.field('Date', 'prescription_date', '', 'date') }}<button class="btn small">Save</button>{% endcall %}</details>{% endif %}</div>
+<div class="card"><h3>Payment</h3><p>Paid {{ s.paid | money }} · Balance <b>{{ s.balance | money }}</b></p>
+{% for p in s.payments %}<div class="small muted">{{ p.recorded_at | dt }} · {{ p.amount | money }} {{ p.method }} · {{ p.receipt_number }}</div>{% endfor %}
+{% call m.form('/pharmacy/counter/' ~ s.counter_sale_id ~ '/pay', csrf, cls='row') %}{{ m.field('Amount', 'amount', s.balance if s.balance > 0 else '', 'number', True, attrs='step=0.01 min=0') }}{{ m.select('Method', 'method', methods, 'cash', blank=False) }}<button class="btn ok">Record payment</button>{% endcall %}</div>
+</div>{% endif %}
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Lab: samples and incoming reports</h1>
+{% for r in rows %}<div class="card"><b>{{ r.test_name }}</b> · {{ r.lab_name }} · {{ m.badge(r.status or '-') }} · {{ r.reports }} report(s)<br>{{ r.patient_name }} · {{ r.display_code }} · DOB {{ r.date_of_birth | d }} · phone …{{ (r.phone or '')[-4:] }}
+<div class="row">{% if r.status == 'ordered' %}{% call m.form('/nurse/lab/' ~ r.lab_order_id ~ '/status', csrf) %}<button class="btn small" name="status" value="sample_collected">Sample collected</button>{% endcall %}{% endif %}
+{% if r.status == 'sample_collected' %}{% call m.form('/nurse/lab/' ~ r.lab_order_id ~ '/status', csrf) %}<button class="btn small" name="status" value="sent_to_lab">Sent to lab</button>{% endcall %}{% endif %}</div>
+{% if r.status in ['sent_to_lab', 'sample_collected', 'ordered'] or r.reports %}
+<details><summary><b>Attach report</b> (two identifiers must match)</summary>
+{% call m.form('/nurse/lab/' ~ r.lab_order_id ~ '/attach', csrf, cls='stack', multipart=True) %}
+<input type="file" name="report_file" accept=".pdf,.png,.jpg,.jpeg" required>
+{{ m.select('Source', 'source', [('from_lab', 'Received from lab'), ('brought_by_patient', 'Brought by patient')], 'from_lab', blank=False) }}
+<p class="small muted">Compare the report with the order above. Enter what the report shows and tick only if it matches.</p>
+{% for n in (1, 2, 3) %}<div class="row">{{ m.select('Identifier ' ~ n, 'id' ~ n ~ '_kind', kinds, '') }}{{ m.field('Value on report', 'id' ~ n ~ '_value') }}<label><input type="checkbox" name="id{{ n }}_ok" value="1"> matches order</label></div>{% endfor %}
+<button class="btn primary">Attach report</button>{% endcall %}</details>{% endif %}</div>
+{% else %}<p class="muted">No lab orders.</p>{% endfor %}
+{% endblock %}

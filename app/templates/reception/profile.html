@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+{% if not prof %}<p class="muted">Patient not found (or stub mode).</p>{% else %}
+{% set p = prof.p %}
+<div class="row" style="justify-content:space-between"><h1>{{ p.name }} <span class="muted">{{ p.display_code }}</span> {% if p.registration_kind == 'emergency_unknown' %}{{ m.badge('unknown patient','warn') }}{% endif %}</h1>
+ <div class="row"><a class="btn primary" href="/reception/appointments?patient_id={{ p.patient_id }}">Book appointment</a><a class="btn" href="/reception/merge?source={{ p.patient_id }}">Merge…</a></div></div>
+{% if prof.merged_into %}<div class="flash err">This record was merged into <a href="/reception/patients/{{ prof.merged_into }}">another patient</a>. Use that one.</div>{% endif %}
+{% if prof.open_dues %}<div class="interrupt">Outstanding dues: {% for d in prof.open_dues %}{{ d.bill_number }} {{ d.balance | money }}{% if d.promised_by %} (promised by {{ d.promised_by | d }}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</div>{% endif %}
+<div class="grid">
+<div class="card"><h3>Details</h3><dl class="kv"><dt>DOB / age</dt><dd>{{ p.date_of_birth | d }} {% if p.date_of_birth %}({{ p.date_of_birth | age }} y){% elif p.approximate_age %}(~{{ p.approximate_age }} y){% endif %}</dd>
+<dt>Gender</dt><dd>{{ p.gender }}</dd><dt>Phone</dt><dd>{{ p.current_phone or '-' }}</dd><dt>Aadhaar</dt><dd>{% if p.aadhaar_last4 %}xxxx {{ p.aadhaar_last4 }}{% else %}-{% endif %}</dd>
+<dt>Blood group</dt><dd>{% if prof.blood_group %}{{ prof.blood_group.abo_group }}{{ prof.blood_group.rh_factor }} ({{ prof.blood_group.source }}){% else %}-{% endif %}</dd></dl>
+<details><summary>Correct details (audited)</summary>
+{% call m.form('/reception/patients/' ~ p.patient_id ~ '/edit', csrf, cls='stack') %}
+{{ m.field('First name', 'given_name', p.given_name) }}{{ m.field('Middle name', 'middle_name', p.middle_name) }}{{ m.field('Last name', 'family_name', p.family_name) }}
+{{ m.select('Gender', 'gender', genders, p.gender) }}{{ m.field('Date of birth', 'date_of_birth', p.date_of_birth, 'date') }}{{ m.field('Approx. age', 'approximate_age', p.approximate_age, 'number') }}
+{{ m.field('Aadhaar last 4', 'aadhaar_last4', p.aadhaar_last4, attrs='maxlength=4') }}<button class="btn">Save correction</button>
+{% endcall %}</details></div>
+
+<div class="card"><h3>Start a visit now</h3>
+{% call m.form('/reception/patients/' ~ p.patient_id ~ '/walkin', csrf, cls='stack') %}
+{{ m.select('Type', 'entry_type', ['walk_in', 'emergency'], 'walk_in', blank=False) }}
+{{ m.select('Doctor', 'doctor_staff_id', doctors | opts('staff_id', 'name')) }}
+<button class="btn primary">Add to queue</button>{% endcall %}</div>
+
+<div class="card"><h3>Phones</h3>{% for ph in prof.phones %}<div>{{ ph.phone_number }} {% if ph.valid_to %}<span class="muted small">(old)</span>{% elif ph.is_primary %}{{ m.badge('primary','ok') }}{% endif %}</div>{% else %}<p class="muted">None.</p>{% endfor %}
+{% call m.form('/reception/patients/' ~ p.patient_id ~ '/phone', csrf, cls='row') %}{{ m.field('New phone', 'phone', '', 'tel', True) }}<label><input type="checkbox" name="is_primary" value="1" checked> primary</label><button class="btn small">Add</button>{% endcall %}</div>
+
+<div class="card"><h3>Attendants / emergency contacts</h3>{% for t in prof.attendants %}<div>{{ t.name }} · {{ t.relationship }} · {{ t.phone }}</div>{% else %}<p class="muted">None.</p>{% endfor %}
+{% call m.form('/reception/patients/' ~ p.patient_id ~ '/attendant', csrf, cls='row') %}{{ m.field('Name', 'name', '', required=True) }}{{ m.field('Relationship', 'relationship') }}{{ m.field('Phone', 'phone', '', 'tel') }}<label><input type="checkbox" name="is_emergency_contact" value="1" checked> emergency contact</label><button class="btn small">Add</button>{% endcall %}</div>
+
+<div class="card"><h3>Allergies</h3>{% for al in prof.allergies %}<div>{{ m.badge(al.severity or 'allergy', 'bad') }} <b>{{ al.allergen }}</b> {{ al.reaction or '' }}</div>{% else %}<p class="muted">None recorded.</p>{% endfor %}
+{% call m.form('/reception/patients/' ~ p.patient_id ~ '/allergy', csrf, cls='row') %}{{ m.field('Allergen', 'allergen_text', '', required=True) }}{{ m.field('Reaction', 'reaction') }}{{ m.select('Severity', 'severity', ['mild', 'moderate', 'severe']) }}<button class="btn small">Add</button>{% endcall %}</div>
+
+<div class="card"><h3>Recent visits</h3>{% for v in prof.visits %}<div>#{{ v.visit_id }} · {{ v.occurred_at | dt }} · {{ v.entry_type }} · {{ m.statusbadge(v.status) }}</div>{% else %}<p class="muted">No visits.</p>{% endfor %}</div>
+</div>{% endif %}
+{% endblock %}

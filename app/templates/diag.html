@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<h1>Diagnostics: web app vs database</h1>
+<p class="muted">Read-only. MISSING = the stored procedure the screen needs is not in MySQL (yet). ARGS = it exists but parameters differ. Fix by editing <code>app/contract.py</code> or the procedure.</p>
+{% if err %}<div class="flash err">{{ err }}</div>{% endif %}
+<h2>Stored procedures ({{ contract_rows | length }})</h2>
+{% set c = namespace(ok=0, bad=0) %}{% for r in contract_rows %}{% if r.status == 'OK' %}{% set c.ok = c.ok + 1 %}{% else %}{% set c.bad = c.bad + 1 %}{% endif %}{% endfor %}
+<p><b>{{ c.ok }}</b> OK · <b>{{ c.bad }}</b> need attention</p>
+<div class="tablewrap"><table><thead><tr><th>Key</th><th>Task</th><th>Status</th><th>Procedure</th><th>Detail</th></tr></thead><tbody>
+{% for r in contract_rows %}<tr><td>{{ r.key }}</td><td>{{ r.task }}</td><td>{{ m.badge(r.status, 'ok' if r.status == 'OK' else ('bad' if r.status == 'MISSING' else 'warn')) }}</td><td>{{ r.proc }}</td><td class="small">{{ r.detail }}</td></tr>{% endfor %}
+</tbody></table></div>
+<h2>Tables and columns used directly</h2>
+{% set bad = schema_rows | rejectattr('status', 'equalto', 'OK') | list %}
+<p>{{ schema_rows | length - bad | length }} OK · {{ bad | length }} need attention</p>
+{% if bad %}<div class="tablewrap"><table><thead><tr><th>Table</th><th>Status</th><th>Missing</th></tr></thead><tbody>
+{% for r in bad %}<tr><td>{{ r.table }}</td><td>{{ m.badge(r.status, 'bad') }}</td><td>{{ r.missing | join(', ') }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+{% endblock %}

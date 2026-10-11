@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block content %}
+<div class="row" style="justify-content:space-between"><h1>Stock</h1>{% if is_pharm %}<div class="row"><a class="btn primary" href="/pharmacy/receive">Receive stock</a><a class="btn" href="/pharmacy/dispense">Dispense</a></div>{% endif %}</div>
+<p class="muted small">Quantities are calculated from the stock ledger. Nothing here can be edited by hand.</p>
+{% if meds %}<div class="tablewrap"><table><thead><tr><th>Medicine</th><th>On hand</th><th>Expired (do not sell)</th><th>Batches</th><th>Schedule</th><th></th></tr></thead><tbody>
+{% for x in meds %}<tr><td><b>{{ x.brand_name }}</b> {{ x.strength_value | num }}{{ x.strength_unit or '' }} <span class="muted small">{{ x.generic_display_name }}</span></td>
+<td>{{ x.on_hand | num }} {{ x.stock_unit }} {% if x.on_hand <= 0 %}{{ m.badge('out','bad') }}{% endif %}</td><td>{% if x.expired_qty > 0 %}{{ m.badge((x.expired_qty | num) ~ ' expired', 'bad') }}{% else %}-{% endif %}</td>
+<td><a href="/pharmacy?medicine_id={{ x.medicine_id }}">{{ x.batches }}</a></td><td>{{ x.schedule_class if x.schedule_class != 'none' else '' }}</td><td>{% if x.returnable %}{{ m.badge('returnable') }}{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="muted">No medicines in the catalog.</p>{% endif %}
+
+<h2>Batches {% if medicine_id %}<a class="small" href="/pharmacy">(all)</a>{% endif %}</h2>
+{% if batches %}<div class="tablewrap"><table><thead><tr><th>Medicine</th><th>Batch</th><th>Expiry</th><th>On hand</th><th>MRP</th>{% if cost %}<th>Cost</th>{% endif %}<th>Supplier</th><th></th></tr></thead><tbody>
+{% for b in batches %}<tr><td>{{ b.brand_name }}</td><td>{{ b.batch_code }}</td><td>{{ b.expiry_date | d }} {% if b.expired %}{{ m.badge('EXPIRED','bad') }}{% elif b.near %}{{ m.badge('expiring soon','warn') }}{% endif %}</td>
+<td>{{ b.on_hand | num }} {{ b.stock_unit }}</td><td>{{ b.mrp | money }}</td>{% if cost %}<td>{{ b.cost_price | money }}</td>{% endif %}<td>{{ b.supplier or '' }} {{ b.supplier_phone or '' }}</td>
+<td>{% if is_pharm %}<details><summary class="small">Adjust / write off</summary>{% call m.form('/pharmacy/adjust', csrf, cls='row') %}<input type="hidden" name="stock_batch_id" value="{{ b.stock_batch_id }}">
+<select name="movement_type"><option value="adjustment">adjustment</option><option value="expired_writeoff">expired write-off</option></select><input name="quantity_delta" type="number" step="any" placeholder="+/- qty" required style="width:90px"><input name="reason" placeholder="reason (required)" required><button class="btn small">Ask owner</button>{% endcall %}</details>{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="muted">No batches.</p>{% endif %}
+
+<h2>Bought outside (restock demand)</h2>{{ m.table(restock, [('Medicine', 'name'), ('Times bought outside', 'times'), ('In catalog', 'in_catalog'), ('Stock now', 'stock_now')], 'Nothing yet.') }}
+{% endblock %}
